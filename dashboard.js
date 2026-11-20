@@ -30,7 +30,7 @@ function nav(tab){if(!isAdmin()&&['clientes','permissoes'].includes(tab))tab='in
 }
 function siteCard(s){
  const a=siteAccess(s),repo=s.repository||'Nenhum repositório vinculado';
- return '<div class="siteitem"><div class="sitethumb">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="sitemeta"><strong>'+esc(s.name)+'</strong><small>'+esc(repo)+'</small></div><span class="status">'+(a.can_edit?'Edição liberada':'Visualização')+'</span><div class="flex">'+(a.can_edit?'<a class="btn primary" href="editor-pro.html?site='+encodeURIComponent(s.id)+'">Abrir editor</a>':'')+(repo?'<a class="btn soft" target="_blank" rel="noopener" href="https://github.com/'+encodeURI(repo).replace(/[^\w%\-./]/g,'')+'">GitHub</a>':'')+(isAdmin()?'<button class="btn" data-rename="'+s.id+'">Configurar</button>':'')+'</div></div>'
+ return '<div class="siteitem"><div class="sitethumb">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="sitemeta"><strong>'+esc(s.name)+'</strong><small>'+esc(repo)+'</small></div><span class="status">'+(a.can_edit?'Edição liberada':'Visualização')+'</span><div class="flex">'+(a.can_edit?'<a class="btn primary" href="editor-pro.html?site='+encodeURIComponent(s.id)+'">Abrir editor</a>':'')+(repo?'<a class="btn soft" target="_blank" rel="noopener" href="https://github.com/'+encodeURI(repo).replace(/[^\w%\-.]/g,'')+'">GitHub</a>':'')+(isAdmin()?'<button class="btn" data-rename="'+s.id+'">Configurar</button>':'')+'</div></div>'
 }
 function listenSite(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>editSite(b.dataset.rename));
