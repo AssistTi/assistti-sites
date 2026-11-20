@@ -1,0 +1,25 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AssistTI Sites | Editor profissional</title>
+<link rel="stylesheet" href="https://unpkg.com/grapesjs@0.22.13/dist/css/grapes.min.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0c1220;color:#eef3ff;font:13px/1.5 system-ui,Arial}
+.top{height:66px;padding:0 16px;background:#101a2a;border-bottom:1px solid #2e405a;display:flex;align-items:center;gap:9px}
+.brand{font-size:16px;font-weight:850;white-space:nowrap}.brand span{color:#8897ff}
+.name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#c9d7ee}
+.actions{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+button{background:#25334b;border:1px solid #435573;border-radius:8px;padding:9px 12px;font:650 12px system-ui;color:#f4f6ff;cursor:pointer}
+button:hover{background:#354764}.primary{background:#5b70f2;border-color:#5b70f2}.primary:hover{background:#7183ff}button:disabled{opacity:.45;cursor:not-allowed}
+.breadcrumb{color:#9bacc8;text-decoration:none}.save{color:#a2efc9;font-size:11px;padding:0 4px;white-space:nowrap}
+.subbar{background:#1a2539;border-bottom:1px solid #30435e;display:flex;align-items:center;gap:7px;padding:9px 14px;flex-wrap:wrap}.subbar button{font-size:11px;padding:7px 10px}.subbar .spacer{flex:1}
+#editor{height:calc(100vh - 117px)}
+.gjs-one-bg{background:#18243a!important}.gjs-two-color{color:#d9e6ff!important}.gjs-three-bg{background:#354665!important}.gjs-four-color,.gjs-four-color-h:hover{color:#9fafff!important}.gjs-pn-panel{background:#172238!important}
+.overlay{position:fixed;inset:0;display:grid;place-items:center;z-index:30;background:#070d17d9;padding:15px}.dialog{width:min(500px,100%);background:#19283f;border:1px solid #4a5c7a;border-radius:19px;padding:26px}.dialog h2{margin:0 0 14px;font-size:20px}.dialog p{color:#aec0db;line-height:1.65}
+.dialog input,.dialog select{width:100%;padding:12px;border-radius:9px;border:1px solid #51617b;background:#0d192b;color:#fff;margin:8px 0 14px}
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}.notice{padding:10px 16px;background:#253e60;color:#cbdfff;border-bottom:1px solid #465d7d}
+@media(max-width:800px){.top{height:auto;min-height:64px;flex-wrap:wrap;padding:10px}.actions{margin-left:0}.subbar{padding:7px}.save{display:none}#editor{height:calc(100vh - 175px)}}
+</style></head><body>
+<div class="top"><a class="breadcrumb" href="dashboard.html">← Painel</a><div class="brand">Assist<span>TI</span> Editor</div><span style="color:#52627c">/</span><strong class="name" id="siteTitle">Carregando...</strong><div class="actions"><span id="saveState" class="save"></span><button id="undo">↶</button><button id="redo">↷</button><button id="preview">Prévia</button><button id="save" class="primary">Salvar online</button><button id="publish" disabled title="Publicação direta no GitHub ainda não configurada">Publicar</button></div></div>
+<div class="subbar"><button id="desktop">Computador</button><button id="tablet">Tablet</button><button id="mobile">Celular</button><span style="border-left:1px solid #465574;height:23px;margin:0 5px"></span><button id="template">Modelos prontos</button><button id="import">Importar HTML</button><button id="image">Imagem por URL</button><button id="history">Histórico</button><button id="export">Exportar HTML</button><span class="spacer"></span><small style="color:#9caecb">Arraste elementos para a página e edite suas propriedades</small></div>
+<div id="editor"></div><div id="modal"></div><input type="file" accept=".html,text/html" id="fileImport" hidden>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/grapesjs@0.22.13/dist/grapes.min.js"></script>
+<script src="auth-config.js"></script><script src="editor-pro.js"></script></body></html>
