@@ -96,12 +96,12 @@ function permissions(userId){
  if(can_publish&&!can_edit){alertMsg('Para publicar, também é necessário permitir edição.','error');return}
  const {error}=await sb.from('site_access').upsert({user_id,site_id,can_edit,can_publish});
  if(error){alertMsg(error.message,'error');return}await load();permissions(user_id);alertMsg('Permissões salvas.');
- }));
+ });
  document.querySelectorAll('[data-revoke]').forEach(b=>b.onclick=async()=>{
  if(!confirm('Revogar o acesso a este site?'))return;
  const user_id=$('permUser').value,{error}=await sb.from('site_access').delete().eq('user_id',user_id).eq('site_id',b.dataset.revoke);
  if(error){alertMsg(error.message,'error');return}await load();permissions(user_id);alertMsg('Acesso revogado.');
- }));
+ });
 }
 async function history(){
  $('view').innerHTML='<div class="empty">Carregando versões...</div>';
