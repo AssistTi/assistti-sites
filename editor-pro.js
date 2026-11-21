@@ -2,7 +2,7 @@
 const c=window.ASSISTTI_AUTH||{},$=id=>document.getElementById(id);
 if(!c.url||!c.anonKey||!window.supabase||!window.grapesjs){document.body.textContent='Falha ao carregar as ferramentas do editor.';return}
 const db=window.supabase.createClient(c.url,c.anonKey),params=new URLSearchParams(location.search),siteId=params.get('site');
-let editor,user,site,version=0,dirty=false;
+let editor,user,site,version=0,dirty=false,hasDraft=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]));
 function message(title,detail){$('modal').innerHTML='<div class="overlay"><div class="dialog"><h2>'+esc(title)+'</h2><p>'+esc(detail)+'</p><div class="row"><button id="close">Fechar</button></div></div></div>';$('close').onclick=()=>{$('modal').innerHTML=''}}
 function init(){
@@ -31,6 +31,7 @@ editor.on('update',()=>{dirty=true;$('saveState').textContent='Alterações não
 async function load(){
 const {data,error}=await db.from('site_documents').select('project,html,css,version').eq('site_id',siteId).maybeSingle();if(error)throw error;
 version=data?.version||0;
+hasDraft=Boolean(data?.html||(data?.project&&Object.keys(data.project).length));
 if(data?.project&&Object.keys(data.project).length)editor.loadProjectData(data.project);
 else if(data?.html){editor.setComponents(data.html);editor.setStyle(data.css||'')}
 else editor.setComponents('<section style="background:linear-gradient(130deg,#1d1535,#60388a);padding:100px 25px;color:#fff;text-align:center"><h1 style="font-size:55px">Seu site começa aqui</h1><p>Clique para editar. Arraste elementos para personalizar.</p><a href="#conteudo" style="color:white">Saiba mais</a></section><section id="conteudo" style="padding:75px 25px"><h2>Nova seção</h2></section>');
@@ -43,14 +44,35 @@ $('save').disabled=true;$('saveState').textContent='Salvando...';
 const payload={site_id:siteId,project:editor.getProjectData(),html:editor.getHtml(),css:editor.getCss(),version:version+1,updated_by:user.id,updated_at:new Date().toISOString()};
 const {error}=await db.from('site_documents').upsert(payload,{onConflict:'site_id'});
 if(error){$('save').disabled=false;message('Falha ao salvar',error.message);return false}
-version++;dirty=false;$('saveState').textContent='Salvo online';
+version++;hasDraft=true;dirty=false;$('saveState').textContent='Salvo online';
 const {error:revError}=await db.from('site_revisions').insert({site_id:siteId,project:payload.project,html:payload.html,css:payload.css,created_by:user.id,label:'Rascunho '+version});
 if(revError)message('Rascunho salvo','Não foi possível registrar o histórico: '+revError.message);
 $('save').disabled=false;
 return true;
 }
 function exportHTML(){const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(site.name)+'</title><style>'+editor.getCss()+'</style></head><body>'+editor.getHtml()+'</body></html>';const url=URL.createObjectURL(new Blob([html],{type:'text/html'})),a=document.createElement('a');a.href=url;a.download='index.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+function publishedUrl(){
+ const repo=String(site?.repository||'');
+ if(!/^AssistTi\/[a-zA-Z0-9._-]+$/i.test(repo))return null;
+ const slug=repo.split('/')[1];
+ return 'https://assistti.github.io/'+encodeURIComponent(slug)+'/';
+}
+function showLive(){
+ const url=publishedUrl();
+ if(!url){message('Sem site publicado','Este projeto ainda não tem um repositório GitHub vinculado para exibir uma prévia.');return}
+ $('liveFrame').src=url;
+ $('openLive').href=url;
+ $('siteLive').style.display='flex';
+ $('saveState').textContent='Visualizando site publicado';
+}
+function hideLive(){
+ $('siteLive').style.display='none';
+ $('liveFrame').src='about:blank';
+ $('saveState').textContent=hasDraft?'Rascunho carregado':'Nenhum rascunho salvo';
+}
 function bind(){
+$('livePreview').onclick=showLive;
+$('closeLive').onclick=hideLive;
 $('save').onclick=save;$('desktop').onclick=()=>editor.setDevice('Computador');$('tablet').onclick=()=>editor.setDevice('Tablet');$('mobile').onclick=()=>editor.setDevice('Celular');
 $('undo').onclick=()=>editor.UndoManager.undo();$('redo').onclick=()=>editor.UndoManager.redo();
 let show=false;$('preview').onclick=()=>{show=!show;editor.runCommand(show?'core:preview':'core:stop-preview');$('preview').textContent=show?'Editar':'Prévia'};
@@ -67,7 +89,7 @@ $('image').onclick=async()=>{
 };
 $('template').onclick=()=>{if(confirm('Substituir a página por uma estrutura nova? Salve a atual primeiro.'))editor.setComponents('<section style="padding:100px 30px;background:#161127;color:white;text-align:center"><h1 style="font-size:60px">Uma nova página</h1><p>Uma mensagem que merece destaque.</p><a href="#conteudo" style="color:#d9afff">Saiba mais</a></section><section id="conteudo" style="padding:80px 30px;text-align:center"><h2>Conteúdo</h2><p>Comece por aqui.</p></section>')};
 $('import').onclick=()=>$('fileImport').click();
-$('fileImport').onchange=async e=>{const f=e.target.files[0];if(!f||!confirm('A importação substituirá o conteúdo atual. Continuar?'))return;const doc=new DOMParser().parseFromString(await f.text(),'text/html');doc.querySelectorAll('script').forEach(n=>n.remove());editor.setComponents(doc.body.innerHTML);editor.setStyle([...doc.querySelectorAll('style')].map(x=>x.textContent).join('\n'));e.target.value='';message('HTML importado','Confira imagens, estilos e botões. Scripts incorporados não são importados.')};
+$('fileImport').onchange=async e=>{const f=e.target.files[0];if(!f||!confirm('A importação substituirá o conteúdo atual. Continuar?'))return;const doc=new DOMParser().parseFromString(await f.text(),'text/html');doc.querySelectorAll('script').forEach(n=>n.remove());hideLive();editor.setComponents(doc.body.innerHTML);editor.setStyle([...doc.querySelectorAll('style')].map(x=>x.textContent).join('\n'));e.target.value='';message('HTML importado','Confira imagens, estilos e botões. Scripts incorporados não são importados.')};
 $('githubImport').onclick=async()=>{
  const {data:record,error}=await db.from('sites').select('repository').eq('id',siteId).maybeSingle();
  if(error||!record?.repository){message('Repositório não configurado','Peça ao administrador para informar o repositório GitHub nas configurações do site.');return}
@@ -78,6 +100,7 @@ $('githubImport').onclick=async()=>{
  const res=await fetch(url,{cache:'no-store'});if(!res.ok)throw Error('Não foi possível abrir o HTML. Confira se o repositório é público e se existe index.html.');
  const text=await res.text();const parsed=new DOMParser().parseFromString(text,'text/html');
  parsed.querySelectorAll('script').forEach(n=>n.remove());
+ hideLive();
  editor.setComponents(parsed.body.innerHTML);
  editor.setStyle([...parsed.querySelectorAll('style')].map(n=>n.textContent).join('\n'));
  $('saveState').textContent='Importação concluída, ainda não salva';
@@ -130,7 +153,7 @@ const {data:s}=await db.from('sites').select('id,name,repository').eq('id',siteI
 if(!p||!s){location.replace('dashboard.html');return}site=s;
 if(p.role!=='admin'){const {data:a}=await db.from('site_access').select('can_edit').eq('user_id',u.id).eq('site_id',siteId).maybeSingle();if(!a?.can_edit){document.body.textContent='Você não tem permissão para editar este site.';return}}
 $('siteTitle').textContent=site.name;
-try{init();await load();bind()}catch(e){message('Não foi possível carregar',e.message)}
+try{init();await load();bind();if(!hasDraft&&publishedUrl())showLive()}catch(e){message('Não foi possível carregar',e.message)}
 }
 boot();
 })();
