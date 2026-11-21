@@ -72,6 +72,7 @@ function hideLive(){
 }
 function bind(){
 $('livePreview').onclick=showLive;
+$('editLive').onclick=()=>{$('githubImport').click()};
 $('closeLive').onclick=hideLive;
 $('save').onclick=save;$('desktop').onclick=()=>editor.setDevice('Computador');$('tablet').onclick=()=>editor.setDevice('Tablet');$('mobile').onclick=()=>editor.setDevice('Celular');
 $('undo').onclick=()=>editor.UndoManager.undo();$('redo').onclick=()=>editor.UndoManager.redo();
