@@ -23,8 +23,8 @@ async function load(){
  state.profiles=usersRes.data||[];
 }
 function nav(tab){if(!isAdmin()&&['clientes','permissoes'].includes(tab))tab='inicio';state.tab=tab;
- if(!['inicio','sites','clientes','permissoes','historico','conta'].includes(tab))tab='inicio';
- const titles={inicio:['Visão geral','Acompanhe seus sites em um só lugar.'],sites:['Meus sites','Edite e organize seus projetos.'],clientes:['Clientes e acessos','Contas cadastradas e sites vinculados.'],permissoes:['Permissões','Controle quem pode editar e salvar cada site.'],historico:['Versões salvas','Recupere rascunhos anteriores.'],conta:['Minha conta','Informações e segurança do seu acesso.']};
+ if(!['inicio','sites','clientes','permissoes','publicacao','historico','conta'].includes(tab))tab='inicio';
+ const titles={inicio:['Visão geral','Acompanhe seus sites em um só lugar.'],sites:['Meus sites','Edite e organize seus projetos.'],clientes:['Clientes e acessos','Contas cadastradas e sites vinculados.'],permissoes:['Permissões','Controle quem pode editar e salvar cada site.'],publicacao:['Publicação dos sites','Confira a conexão com o GitHub e os backups.'],historico:['Versões salvas','Recupere rascunhos anteriores.'],conta:['Minha conta','Informações e segurança do seu acesso.']};
  $('pageTitle').textContent=titles[tab][0];$('pageSubtitle').textContent=titles[tab][1];
  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));
  render();
@@ -111,11 +111,26 @@ async function history(){
  const rows=(data||[]).map(r=>'<tr><td>'+esc(state.sites.find(s=>s.id===r.site_id)?.name||'Site')+'</td><td>'+esc(r.label)+'</td><td>'+new Date(r.created_at).toLocaleString('pt-BR')+'</td><td><a class="btn" href="editor-pro.html?site='+encodeURIComponent(r.site_id)+'&revision='+encodeURIComponent(r.id)+'">Visualizar no editor</a></td></tr>').join('');
  $('view').innerHTML='<div class="sectiontitle"><h2>Histórico dos rascunhos</h2></div><div class="card tablewrap"><table><thead><tr><th>Site</th><th>Descrição</th><th>Data</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'+(rows?'':'<p class="hint">Nenhuma versão salva ainda.</p>')+'</div>';
 }
+async function publications(){
+ if(!isAdmin()){nav('inicio');return}
+ $('view').innerHTML='<div class="sectiontitle"><h2>Publicação no GitHub</h2></div><div class="card"><h3 style="margin-top:0">Conectar o GitHub</h3><p class="hint">A publicação já está integrada ao editor, mas precisa de uma credencial de acesso guardada no Supabase. Não coloque a credencial neste painel, no repositório nem em mensagens.</p><p class="hint"><strong>1.</strong> No GitHub, gere um token com acesso somente aos repositórios que deseja publicar, permissão <strong>Contents: Read and write</strong> e prazo de validade limitado.</p><p class="hint"><strong>2.</strong> No Supabase, abra <strong>Edge Functions → Secrets</strong> e crie uma variável chamada <code>GITHUB_PUBLISH_TOKEN</code> com o token gerado.</p><p class="hint"><strong>3.</strong> Volte ao editor do site e atualize a página. A opção Publicar será liberada para usuários autorizados.</p><div class="flex"><a class="btn primary" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Criar token no GitHub</a><a class="btn" href="https://supabase.com/dashboard/project/tlverdwpewfoxbojyxqf/functions/secrets" target="_blank" rel="noopener">Configurar no Supabase</a></div></div><div class="section"><div class="sectiontitle"><h2>Status por site</h2></div><div class="card"><div id="publicationStatuses" class="list">Verificando...</div></div></div><div class="section card"><h3 style="margin-top:0">Proteção da versão anterior</h3><p class="hint">Antes de cada publicação, a função tenta criar uma branch de backup no GitHub. Se não conseguir criar esse backup, não substitui a página pública. Os rascunhos salvos continuam no Supabase.</p></div>';
+ const container=$('publicationStatuses');container.innerHTML='';
+ for(const site of state.sites){
+ const row=document.createElement('div');row.className='siteitem';
+ const info=document.createElement('div');info.className='sitemeta';const strong=document.createElement('strong');strong.textContent=site.name;
+ const small=document.createElement('small');small.textContent=site.repository||'Sem repositório cadastrado';
+ info.append(strong,small);const label=document.createElement('span');label.className='muted';label.textContent='Verificando...';row.append(info,label);container.append(row);
+ try{const {data,error}=await sb.functions.invoke('publish-site',{body:{action:'status',siteId:site.id}});
+ if(error)label.textContent='Não foi possível consultar';else label.textContent=data?.configured?'Pronto para publicar':'Falta token no Supabase';
+ }catch{label.textContent='Serviço indisponível'}
+ }
+ if(!state.sites.length)container.textContent='Nenhum site cadastrado.';
+}
 function account(){
  $('view').innerHTML='<div class="card" style="max-width:720px"><h2 style="margin-top:0">Minha conta</h2><p class="muted">E-mail: <strong>'+esc(state.user.email)+'</strong></p><p class="muted">Perfil: <strong>'+(isAdmin()?'Administrador':'Cliente')+'</strong></p><hr style="border:0;border-top:1px solid #37435b;margin:22px 0"><h3>Redefinir senha</h3><p class="hint">Enviaremos um e-mail com instruções para redefinir sua senha.</p><button class="btn" id="resetPass">Enviar e-mail de recuperação</button></div>';
  $('resetPass').onclick=async()=>{const {error}=await sb.auth.resetPasswordForEmail(state.user.email,{redirectTo:new URL('redefinir-senha.html',location.href).href});alertMsg(error?'Não foi possível enviar o e-mail.':'Verifique sua caixa de entrada.',error?'error':'ok')};
 }
-function render(){if(state.tab==='inicio')overview();if(state.tab==='sites')sites();if(state.tab==='clientes')clients();if(state.tab==='permissoes')permissions();if(state.tab==='historico')history();if(state.tab==='conta')account()}
+function render(){if(state.tab==='inicio')overview();if(state.tab==='sites')sites();if(state.tab==='clientes')clients();if(state.tab==='permissoes')permissions();if(state.tab==='publicacao')publications();if(state.tab==='historico')history();if(state.tab==='conta')account()}
 async function boot(){
  const {data:{user},error}=await sb.auth.getUser();
  if(error||!user){location.replace('login.html');return}
