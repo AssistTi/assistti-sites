@@ -2,7 +2,7 @@
 const c=window.ASSISTTI_AUTH||{},$=id=>document.getElementById(id);
 if(!c.url||!c.anonKey||!window.supabase||!window.grapesjs){document.body.textContent='Falha ao carregar as ferramentas do editor.';return}
 const db=window.supabase.createClient(c.url,c.anonKey),params=new URLSearchParams(location.search),siteId=params.get('site');
-let editor,user,site,version=0,dirty=false,hasDraft=false;
+let editor,user,site,version=0,dirty=false,hasDraft=false,isAdministrator=false;
 let zoom=75;
 const esc=s=>String(s??'').replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]));
 function message(title,detail){$('modal').innerHTML='<div class="overlay"><div class="dialog"><h2>'+esc(title)+'</h2><p>'+esc(detail)+'</p><div class="row"><button id="close">Fechar</button></div></div></div>';$('close').onclick=()=>{$('modal').innerHTML=''}}
@@ -93,7 +93,7 @@ try{const stored=Number(sessionStorage.getItem('assistti-editor-zoom'));zoom=sto
 editor.on('load',()=>updateZoom(zoom));
 updateZoom(zoom);
 $('livePreview').onclick=showLive;
-$('editLive').onclick=()=>{$('githubImport').click()};
+$('editLive').onclick=()=>{if(!isAdministrator)return;$('githubImport').click()};
 $('closeLive').onclick=hideLive;
 $('save').onclick=save;$('desktop').onclick=()=>editor.setDevice('Computador');$('tablet').onclick=()=>editor.setDevice('Tablet');$('mobile').onclick=()=>editor.setDevice('Celular');
 $('undo').onclick=()=>editor.UndoManager.undo();$('redo').onclick=()=>editor.UndoManager.redo();
@@ -113,6 +113,7 @@ $('template').onclick=()=>{if(confirm('Substituir a página por uma estrutura no
 $('import').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=async e=>{const f=e.target.files[0];if(!f||!confirm('A importação substituirá o conteúdo atual. Continuar?'))return;const doc=new DOMParser().parseFromString(await f.text(),'text/html');doc.querySelectorAll('script').forEach(n=>n.remove());hideLive();editor.setComponents(doc.body.innerHTML);editor.setStyle([...doc.querySelectorAll('style')].map(x=>x.textContent).join('\n'));e.target.value='';message('HTML importado','Confira imagens, estilos e botões. Scripts incorporados não são importados.')};
 $('githubImport').onclick=async()=>{
+ if(!isAdministrator){message('Acesso restrito','Somente o administrador pode importar o HTML diretamente do GitHub.');return}
  const {data:record,error}=await db.from('sites').select('repository').eq('id',siteId).maybeSingle();
  if(error||!record?.repository){message('Repositório não configurado','Peça ao administrador para informar o repositório GitHub nas configurações do site.');return}
  if(!confirm('Importar a página do GitHub substituirá o rascunho atual no editor. Salve seu trabalho antes. Continuar?'))return;
@@ -173,6 +174,10 @@ const {data:{user:u}}=await db.auth.getUser();if(!u){location.replace('login.htm
 const {data:p}=await db.from('profiles').select('role').eq('id',u.id).maybeSingle();
 const {data:s}=await db.from('sites').select('id,name,repository').eq('id',siteId).maybeSingle();
 if(!p||!s){location.replace('dashboard.html');return}site=s;
+isAdministrator=p.role==='admin';
+$('githubImport').hidden=!isAdministrator;
+$('editLive').hidden=!isAdministrator;
+if(!isAdministrator){$('liveMessage').textContent='Esta é a visualização do site que está no ar. Para editar, utilize os elementos liberados no painel e salve seu rascunho.';}
 if(p.role!=='admin'){const {data:a}=await db.from('site_access').select('can_edit').eq('user_id',u.id).eq('site_id',siteId).maybeSingle();if(!a?.can_edit){document.body.textContent='Você não tem permissão para editar este site.';return}}
 $('siteTitle').textContent=site.name;
 try{init();await load();bind();if(!hasDraft&&publishedUrl())showLive()}catch(e){message('Não foi possível carregar',e.message)}
