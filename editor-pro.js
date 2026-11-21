@@ -85,7 +85,40 @@ function hideLive(){
  $('liveFrame').src='about:blank';
  $('saveState').textContent=hasDraft?'Rascunho carregado':'Nenhum rascunho salvo';
 }
+function installKeyboardShortcuts(){
+ const handler=e=>{
+  if(!(e.ctrlKey||e.metaKey)||e.altKey||e.isComposing)return;
+  const node=e.target;
+  // Durante edição de texto, o navegador continua controlando desfazer/refazer.
+  const textEditing=node&&typeof node.closest==='function'&&node.closest('input,textarea,select,[contenteditable="true"],[contenteditable=""],[role="textbox"]');
+  if(textEditing||node?.isContentEditable)return;
+  const key=String(e.key||'').toLowerCase();
+  if(key==='z'){
+    e.preventDefault();
+    if(e.shiftKey)editor.UndoManager.redo();
+    else editor.UndoManager.undo();
+  }else if(key==='y'&&!e.shiftKey){
+    e.preventDefault();
+    editor.UndoManager.redo();
+  }else if(key==='s'&&!e.shiftKey){
+    e.preventDefault();
+    if(!$('save').disabled)save();
+  }
+ };
+ document.addEventListener('keydown',handler,true);
+ const attachCanvas=()=>{
+  const canvasDoc=editor?.Canvas?.getDocument?.();
+  if(canvasDoc&&!canvasDoc.__assisttiShortcutsAdded){
+    canvasDoc.addEventListener('keydown',handler,true);
+    canvasDoc.__assisttiShortcutsAdded=true;
+  }
+ };
+ editor.on('load',attachCanvas);
+ editor.on('canvas:frame:load',attachCanvas);
+ attachCanvas();
+}
 function bind(){
+installKeyboardShortcuts();
 $('zoomOut').onclick=()=>updateZoom(zoom-10);
 $('zoomIn').onclick=()=>updateZoom(zoom+10);
 $('zoomReset').onclick=()=>updateZoom(100);
