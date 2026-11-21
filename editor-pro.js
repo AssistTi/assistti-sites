@@ -134,6 +134,7 @@ function bind(){
 window.AssistElementorShell?.install?.(editor);
 window.AssistAdvanced?.install?.(editor);
 window.AssistWorkspace?.install?.(editor,{updateZoom,getZoom:()=>zoom});
+window.AssistAIEditor?.install?.(editor);
 installKeyboardShortcuts();
 $('zoomOut').onclick=()=>updateZoom(zoom-10);
 $('zoomIn').onclick=()=>updateZoom(zoom+10);
