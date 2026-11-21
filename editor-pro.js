@@ -3,6 +3,7 @@ const c=window.ASSISTTI_AUTH||{},$=id=>document.getElementById(id);
 if(!c.url||!c.anonKey||!window.supabase||!window.grapesjs){document.body.textContent='Falha ao carregar as ferramentas do editor.';return}
 const db=window.supabase.createClient(c.url,c.anonKey),params=new URLSearchParams(location.search),siteId=params.get('site');
 let editor,user,site,version=0,dirty=false,hasDraft=false;
+let zoom=75;
 const esc=s=>String(s??'').replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]));
 function message(title,detail){$('modal').innerHTML='<div class="overlay"><div class="dialog"><h2>'+esc(title)+'</h2><p>'+esc(detail)+'</p><div class="row"><button id="close">Fechar</button></div></div></div>';$('close').onclick=()=>{$('modal').innerHTML=''}}
 function init(){
@@ -57,10 +58,24 @@ function publishedUrl(){
  const slug=repo.split('/')[1];
  return 'https://assistti.github.io/'+encodeURIComponent(slug)+'/';
 }
+function updateZoom(value){
+ zoom=Math.max(45,Math.min(100,Math.round(value/5)*5));
+ $('zoomLabel').textContent=zoom+'%';
+ try{if(editor?.Canvas?.setZoom)editor.Canvas.setZoom(zoom)}catch(err){console.warn('Editor zoom:',err)}
+ const frame=$('liveFrame');
+ if(frame){
+  const factor=zoom/100;
+  frame.style.width=(100/factor)+'%';
+  frame.style.height=(100/factor)+'%';
+  frame.style.transform='scale('+factor+')';
+ }
+ try{sessionStorage.setItem('assistti-editor-zoom',String(zoom))}catch{}
+}
 function showLive(){
  const url=publishedUrl();
  if(!url){message('Sem site publicado','Este projeto ainda não tem um repositório GitHub vinculado para exibir uma prévia.');return}
  $('liveFrame').src=url;
+ updateZoom(zoom);
  $('openLive').href=url;
  $('siteLive').style.display='flex';
  $('saveState').textContent='Visualizando site publicado';
@@ -71,6 +86,12 @@ function hideLive(){
  $('saveState').textContent=hasDraft?'Rascunho carregado':'Nenhum rascunho salvo';
 }
 function bind(){
+$('zoomOut').onclick=()=>updateZoom(zoom-10);
+$('zoomIn').onclick=()=>updateZoom(zoom+10);
+$('zoomReset').onclick=()=>updateZoom(100);
+try{const stored=Number(sessionStorage.getItem('assistti-editor-zoom'));zoom=stored>=45&&stored<=100?stored:75}catch{zoom=75}
+editor.on('load',()=>updateZoom(zoom));
+updateZoom(zoom);
 $('livePreview').onclick=showLive;
 $('editLive').onclick=()=>{$('githubImport').click()};
 $('closeLive').onclick=hideLive;
