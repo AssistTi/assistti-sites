@@ -115,14 +115,22 @@ async importHtml(html,baseURL){
   if(!value||/^(?:https?:|data:|blob:|mailto:|tel:|#|javascript:)/i.test(value))continue;
   try{el.setAttribute(prop,new URL(value,baseURL).href);relatives++}catch{}
  }
- let css=[...parsed.querySelectorAll("style")].map(x=>x.textContent||"").join("\n"),linked=0,failed=0;
+ function absolutizeCssUrls(source,sourceBase){
+  if(!sourceBase)return source;
+  return source.replace(/url\(\s*(["']?)([^)"']+)\1\s*\)/gi,(match,quote,path)=>{
+    const value=path.trim();
+    if(/^(?:data:|https?:|blob:|#|\/\/)/i.test(value))return match;
+    try{return "url("+quote+new URL(value,sourceBase).href+quote+")"}catch{return match}
+  });
+ }
+ let css=[...parsed.querySelectorAll("style")].map(x=>absolutizeCssUrls(x.textContent||"",baseURL)).join("\n"),linked=0,failed=0;
  for(const link of [...parsed.querySelectorAll('link[rel~="stylesheet"]')].slice(0,10)){
   const href=link.getAttribute("href");if(!href)continue;
   try{
    const target=baseURL?new URL(href,baseURL).href:href;
    if(!/^https:\/\//i.test(target))continue;
    const response=await fetch(target,{mode:"cors"});if(!response.ok)throw new Error("Cannot fetch");
-   css+="\n"+await response.text();linked++;
+   css+="\n"+absolutizeCssUrls(await response.text(),target);linked++;
   }catch{failed++}
  }
  return {html:parsed.body.innerHTML,css,summary:{scripts,relatives,linked,failed}};
