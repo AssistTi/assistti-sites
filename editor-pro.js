@@ -72,7 +72,7 @@ function publishedUrl(){
  return 'https://assistti.github.io/'+encodeURIComponent(slug)+'/';
 }
 function updateZoom(value){
- zoom=Math.max(45,Math.min(100,Math.round(value/5)*5));
+ zoom=Math.max(45,Math.min(150,Math.round(value/5)*5));
  $('zoomLabel').textContent=zoom+'%';
  try{if(editor?.Canvas?.setZoom)editor.Canvas.setZoom(zoom)}catch(err){console.warn('Editor zoom:',err)}
  const frame=$('liveFrame');
@@ -138,7 +138,7 @@ installKeyboardShortcuts();
 $('zoomOut').onclick=()=>updateZoom(zoom-10);
 $('zoomIn').onclick=()=>updateZoom(zoom+10);
 $('zoomReset').onclick=()=>updateZoom(100);
-try{const stored=Number(sessionStorage.getItem('assistti-editor-zoom-v2'));zoom=stored>=45&&stored<=100?stored:100}catch{zoom=100}
+try{const stored=Number(sessionStorage.getItem('assistti-editor-zoom-v2'));zoom=stored>=45&&stored<=150?stored:100}catch{zoom=100}
 editor.on('load',()=>updateZoom(zoom));
 updateZoom(zoom);
 $('livePreview').onclick=showLive;
