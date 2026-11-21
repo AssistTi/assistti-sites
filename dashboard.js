@@ -23,14 +23,15 @@ async function load(){
  state.profiles=usersRes.data||[];
 }
 function nav(tab){if(!isAdmin()&&['clientes','permissoes'].includes(tab))tab='inicio';state.tab=tab;
+ if(!['inicio','sites','clientes','permissoes','historico','conta'].includes(tab))tab='inicio';
  const titles={inicio:['Visão geral','Acompanhe seus sites em um só lugar.'],sites:['Meus sites','Edite e organize seus projetos.'],clientes:['Clientes e acessos','Contas cadastradas e sites vinculados.'],permissoes:['Permissões','Controle quem pode editar e salvar cada site.'],historico:['Versões salvas','Recupere rascunhos anteriores.'],conta:['Minha conta','Informações e segurança do seu acesso.']};
  $('pageTitle').textContent=titles[tab][0];$('pageSubtitle').textContent=titles[tab][1];
  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));
  render();
 }
 function siteCard(s){
- const a=siteAccess(s),repo=s.repository||'Nenhum repositório vinculado';
- return '<div class="siteitem"><div class="sitethumb">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="sitemeta"><strong>'+esc(s.name)+'</strong><small>'+esc(repo)+'</small></div><span class="status">'+(a.can_edit?'Edição liberada':'Visualização')+'</span><div class="flex">'+(a.can_edit?'<a class="btn primary" href="editor-pro.html?site='+encodeURIComponent(s.id)+'">Abrir editor</a>':'')+(repo?'<a class="btn soft" target="_blank" rel="noopener" href="https://github.com/'+encodeURI(repo).replace(/[^\w%\-.]/g,'')+'">GitHub</a>':'')+(isAdmin()?'<button class="btn" data-rename="'+s.id+'">Configurar</button>':'')+'</div></div>'
+ const a=siteAccess(s),repo=s.repository||'';
+ return '<div class="siteitem"><div class="sitethumb">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="sitemeta"><strong>'+esc(s.name)+'</strong><small>'+esc(repo||'Sem repositório vinculado')+'</small></div><span class="status">'+(a.can_edit?'Edição liberada':'Visualização')+'</span><div class="flex">'+(a.can_edit?'<a class="btn primary" href="editor-pro.html?site='+encodeURIComponent(s.id)+'">Abrir editor</a>':'')+(repo?'<a class="btn soft" target="_blank" rel="noopener" href="https://github.com/'+encodeURI(repo).replace(/[^\w%\-.]/g,'')+'">GitHub</a>':'')+(isAdmin()?'<button class="btn" data-rename="'+s.id+'">Configurar</button>':'')+'</div></div>'
 }
 function listenSite(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>editSite(b.dataset.rename));
@@ -112,7 +113,7 @@ async function history(){
 }
 function account(){
  $('view').innerHTML='<div class="card" style="max-width:720px"><h2 style="margin-top:0">Minha conta</h2><p class="muted">E-mail: <strong>'+esc(state.user.email)+'</strong></p><p class="muted">Perfil: <strong>'+(isAdmin()?'Administrador':'Cliente')+'</strong></p><hr style="border:0;border-top:1px solid #37435b;margin:22px 0"><h3>Redefinir senha</h3><p class="hint">Enviaremos um e-mail com instruções para redefinir sua senha.</p><button class="btn" id="resetPass">Enviar e-mail de recuperação</button></div>';
- $('resetPass').onclick=async()=>{const {error}=await sb.auth.resetPasswordForEmail(state.user.email,{redirectTo:new URL('login.html',location.href).href});alertMsg(error?'Não foi possível enviar o e-mail.':'Verifique sua caixa de entrada.',error?'error':'ok')};
+ $('resetPass').onclick=async()=>{const {error}=await sb.auth.resetPasswordForEmail(state.user.email,{redirectTo:new URL('redefinir-senha.html',location.href).href});alertMsg(error?'Não foi possível enviar o e-mail.':'Verifique sua caixa de entrada.',error?'error':'ok')};
 }
 function render(){if(state.tab==='inicio')overview();if(state.tab==='sites')sites();if(state.tab==='clientes')clients();if(state.tab==='permissoes')permissions();if(state.tab==='historico')history();if(state.tab==='conta')account()}
 async function boot(){
