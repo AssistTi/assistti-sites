@@ -14,6 +14,8 @@ window.AssistElementorShell={
    $("esPanelTitle").textContent=name==="widgets"?"Elementos":name==="advanced"?"Avançado":selected?.getName?.()||"Editar elemento";
    if(name==="layout")$("esNoSelection").style.display=selected?"none":"block";
    $("editorArea").classList.remove("mobile-sidebar-hidden");
+   $("editorSidebar").style.display="";
+   $("esShowWidgets").textContent="+ Elementos";
   }
   tabs.forEach(el=>el.addEventListener("click",()=>openTab(el.dataset.estab)));
   $("esShowWidgets").onclick=()=>openTab("widgets");
@@ -52,7 +54,7 @@ window.AssistElementorShell={
    $("esBlockEmpty").style.display=count?"none":"block";
   }
   search.addEventListener("input",applySearch);
-  editor.on("block:add",applySearch);
+  editor.on("block:add",()=>requestAnimationFrame(applySearch));
   // Os painéis de GrapesJS usam containers fixos, como acontece em editores profissionais.
   const header=document.querySelector("#editorSidebar .es-head");
   header?.addEventListener("dblclick",()=>openTab("widgets"));
