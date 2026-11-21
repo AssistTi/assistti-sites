@@ -22,8 +22,9 @@ async function load(){
  state.access=accessRes.data||[];
  state.profiles=usersRes.data||[];
 }
-function nav(tab){if(!isAdmin()&&['clientes','permissoes'].includes(tab))tab='inicio';state.tab=tab;
+function nav(tab){if(!isAdmin()&&['clientes','permissoes','publicacao'].includes(tab))tab='inicio';
  if(!['inicio','sites','clientes','permissoes','publicacao','historico','conta'].includes(tab))tab='inicio';
+ state.tab=tab;
  const titles={inicio:['Visão geral','Acompanhe seus sites em um só lugar.'],sites:['Meus sites','Edite e organize seus projetos.'],clientes:['Clientes e acessos','Contas cadastradas e sites vinculados.'],permissoes:['Permissões','Controle quem pode editar e salvar cada site.'],publicacao:['Publicação dos sites','Confira a conexão com o GitHub e os backups.'],historico:['Versões salvas','Recupere rascunhos anteriores.'],conta:['Minha conta','Informações e segurança do seu acesso.']};
  $('pageTitle').textContent=titles[tab][0];$('pageSubtitle').textContent=titles[tab][1];
  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));
@@ -39,17 +40,34 @@ function listenSite(){
 function overview(){
  const own=state.sites.filter(s=>isAdmin()||siteAccess(s).can_edit);
  const totalClients=state.profiles.filter(p=>p.role==='client').length;
- let html='<div class="grid"><div class="card kpi"><small>Sites cadastrados</small><strong>'+state.sites.length+'</strong><span>Projetos no sistema</span></div>'+
- '<div class="card kpi"><small>'+(isAdmin()?'Clientes cadastrados':'Sites que posso editar')+'</small><strong>'+(isAdmin()?totalClients:own.length)+'</strong><span>'+(isAdmin()?'Contas de clientes':'Com permissão de edição')+'</span></div>'+
- '<div class="card kpi"><small>Sites com GitHub</small><strong>'+state.sites.filter(s=>s.repository).length+'</strong><span>Repositórios vinculados</span></div>'+
- '<div class="card kpi"><small>Minha conta</small><strong>'+(isAdmin()?'Admin':'Cliente')+'</strong><span>Login protegido por e-mail</span></div></div>';
- html+='<div class="section"><div class="sectiontitle"><h2>Seus projetos</h2><button class="btn" data-go="sites">Ver todos</button></div><div class="list">'+(own.length?own.slice(0,5).map(siteCard).join(''):'<div class="empty">Nenhum site disponível para esta conta.</div>')+'</div></div>';
- html+='<div class="section card"><h2 style="margin-top:0;font-size:16px">Edição e publicação</h2><p class="hint">O editor salva rascunhos e versões no Supabase. A publicação automática no GitHub ainda precisa de uma integração de servidor com autenticação própria. Nenhum botão aqui publica sem essa conexão.</p></div>';
- $('view').innerHTML=html;listenSite();document.querySelector('[data-go="sites"]').onclick=()=>nav('sites');
+ let html='<section class="aihero"><div class="aihero-content"><span class="ai-eyebrow">✦ Seu espaço de criação</span>'+
+ '<h2>'+(isAdmin()?'Seus sites, tudo em um só lugar.':'Seu site, suas ideias, seu espaço.')+'</h2>'+
+ '<p>'+(isAdmin()?'Crie, edite e organize os sites dos seus clientes sem complicação. Escolha um projeto e continue de onde parou.':'Encontre seus sites, faça alterações e acompanhe as versões salvas com facilidade.')+'</p>'+
+ '<div class="ai-actions"><button class="btn primary" id="heroMain">'+(isAdmin()?'+ Criar novo site':'Ver meus sites')+'</button><button class="btn soft" id="heroSecond">'+(isAdmin()?'Gerenciar clientes':'Abrir meus projetos')+'</button></div></div>'+
+ '<div class="aihero-art" aria-hidden="true"><div class="ai-orbit"></div><div class="ai-orbit"></div><div class="ai-orbit">✦</div></div></section>';
+ html+='<section class="ai-shortcuts">'+
+ '<button class="ai-shortcut" data-quick="sites"><span class="symbol">▧</span><span><strong>Meus sites</strong><small>Continue a edição das páginas</small></span></button>'+
+ (isAdmin()?'<button class="ai-shortcut" data-quick="clientes"><span class="symbol">♙</span><span><strong>Clientes</strong><small>Contas e acessos individuais</small></span></button>':'<button class="ai-shortcut" data-quick="historico"><span class="symbol">◷</span><span><strong>Histórico</strong><small>Consulte suas versões salvas</small></span></button>')+
+ '<button class="ai-shortcut" data-quick="'+(isAdmin()?'publicacao':'conta')+'"><span class="symbol">'+(isAdmin()?'↑':'⚙')+'</span><span><strong>'+(isAdmin()?'Publicações':'Minha conta')+'</strong><small>'+(isAdmin()?'Confira o envio ao GitHub':'Gerencie seu acesso')+'</small></span></button></section>';
+ html+='<div class="sectiontitle section"><div><h2>Resumo do seu espaço</h2><p class="ai-section-copy">Informações dos projetos conectados à sua conta</p></div></div>';
+ html+='<div class="grid">'+
+ '<div class="card kpi"><small>Sites cadastrados</small><strong>'+state.sites.length+'</strong><span>Projetos no painel</span></div>'+
+ '<div class="card kpi"><small>'+(isAdmin()?'Clientes':'Sites liberados')+'</small><strong>'+(isAdmin()?totalClients:own.length)+'</strong><span>'+(isAdmin()?'Contas de clientes':'Com acesso à edição')+'</span></div>'+
+ '<div class="card kpi"><small>GitHub vinculado</small><strong>'+state.sites.filter(s=>s.repository).length+'</strong><span>Repositórios cadastrados</span></div>'+
+ '<div class="card kpi"><small>Seu perfil</small><strong style="font-size:24px">'+(isAdmin()?'Admin':'Cliente')+'</strong><span>Conta autenticada</span></div></div>';
+ html+='<div class="section"><div class="sectiontitle"><div><h2>Seus projetos</h2><p class="ai-section-copy">Acesse rapidamente o site que deseja editar</p></div><button class="btn" data-go="sites">Ver todos</button></div><div class="list">'+
+ (own.length?own.slice(0,6).map(siteCard).join(''):'<div class="empty">Nenhum site liberado até o momento.</div>')+'</div></div>';
+ html+='<div class="ai-footer-card"><div><h3>Pronto para continuar?</h3><p>As alterações podem ser salvas como rascunho antes da publicação. Abra um site para editar, conferir a prévia e continuar seu trabalho.</p></div><button class="btn primary" data-go="sites">Abrir meus sites</button></div>';
+ $('view').innerHTML=html;
+ listenSite();
+ $('heroMain').onclick=()=>isAdmin()?editSite(null):nav('sites');
+ $('heroSecond').onclick=()=>nav(isAdmin()?'clientes':'sites');
+ document.querySelectorAll('[data-quick]').forEach(el=>el.onclick=()=>nav(el.dataset.quick));
+ document.querySelectorAll('[data-go="sites"]').forEach(el=>el.onclick=()=>nav('sites'));
 }
 function sites(){
  $('view').innerHTML='<div class="sectiontitle"><h2>Biblioteca de sites</h2>'+(isAdmin()?'<button class="btn primary" id="newSite">+ Novo site</button>':'')+'</div>'+
- '<div class="toolbar"><input id="siteSearch" placeholder="Buscar pelo nome ou repositório"></div>'+
+ '<div class="toolbar"><input class="ai-search" id="siteSearch" placeholder="Pesquisar sites pelo nome ou repositório..."></div>'+
  '<div class="list" id="siteList">'+(state.sites.length?state.sites.map(siteCard).join(''):'<div class="empty">Nenhum site cadastrado.</div>')+'</div>';
  listenSite();const newSite=$('newSite');if(newSite)newSite.onclick=()=>editSite(null);
  $('siteSearch').oninput=e=>{
