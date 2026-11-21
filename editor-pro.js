@@ -118,6 +118,7 @@ function installKeyboardShortcuts(){
  attachCanvas();
 }
 function bind(){
+window.AssistAdvanced?.install?.(editor);
 installKeyboardShortcuts();
 $('zoomOut').onclick=()=>updateZoom(zoom-10);
 $('zoomIn').onclick=()=>updateZoom(zoom+10);
@@ -144,24 +145,33 @@ $('image').onclick=async()=>{
 };
 $('template').onclick=()=>{if(confirm('Substituir a página por uma estrutura nova? Salve a atual primeiro.'))editor.setComponents('<section style="padding:100px 30px;background:#161127;color:white;text-align:center"><h1 style="font-size:60px">Uma nova página</h1><p>Uma mensagem que merece destaque.</p><a href="#conteudo" style="color:#d9afff">Saiba mais</a></section><section id="conteudo" style="padding:80px 30px;text-align:center"><h2>Conteúdo</h2><p>Comece por aqui.</p></section>')};
 $('import').onclick=()=>$('fileImport').click();
-$('fileImport').onchange=async e=>{const f=e.target.files[0];if(!f||!confirm('A importação substituirá o conteúdo atual. Continuar?'))return;const doc=new DOMParser().parseFromString(await f.text(),'text/html');doc.querySelectorAll('script').forEach(n=>n.remove());hideLive();editor.setComponents(doc.body.innerHTML);editor.setStyle([...doc.querySelectorAll('style')].map(x=>x.textContent).join('\n'));e.target.value='';message('HTML importado','Confira imagens, estilos e botões. Scripts incorporados não são importados.')};
-$('githubImport').onclick=async()=>{
- if(!isAdministrator){message('Acesso restrito','Somente o administrador pode importar o HTML diretamente do GitHub.');return}
- const {data:record,error}=await db.from('sites').select('repository').eq('id',siteId).maybeSingle();
- if(error||!record?.repository){message('Repositório não configurado','Peça ao administrador para informar o repositório GitHub nas configurações do site.');return}
- if(!confirm('Importar a página do GitHub substituirá o rascunho atual no editor. Salve seu trabalho antes. Continuar?'))return;
+$('fileImport').onchange=async e=>{
+ const file=e.target.files[0];if(!file)return;
+ if(!confirm('A importação substituirá o conteúdo atual do editor. Salve seu rascunho antes. Continuar?'))return;
  try{
- $('saveState').textContent='Buscando página no GitHub...';
- const url='https://raw.githubusercontent.com/'+record.repository+'/main/index.html';
- const res=await fetch(url,{cache:'no-store'});if(!res.ok)throw Error('Não foi possível abrir o HTML. Confira se o repositório é público e se existe index.html.');
- const text=await res.text();const parsed=new DOMParser().parseFromString(text,'text/html');
- parsed.querySelectorAll('script').forEach(n=>n.remove());
- hideLive();
- editor.setComponents(parsed.body.innerHTML);
- editor.setStyle([...parsed.querySelectorAll('style')].map(n=>n.textContent).join('\n'));
- $('saveState').textContent='Importação concluída, ainda não salva';
- message('Página importada','A página foi carregada no editor. Animações e funções JavaScript externas não foram importadas. Revise o resultado e clique em Salvar online.');
- }catch(e){message('Falha na importação',e.message)}
+  const result=await window.AssistAdvanced.importHtml(await file.text(),null);
+  hideLive();editor.setComponents(result.html);editor.setStyle(result.css);
+  const msg='Importação concluída. '+result.summary.scripts+' script(s) removido(s). '+result.summary.failed+' arquivo(s) CSS externo(s) não carregado(s). Revise animações, checkout e responsividade antes de publicar.';
+  message('HTML importado',msg);
+ }catch(error){message('Falha na importação',error.message)}
+ e.target.value='';
+};
+$('githubImport').onclick=async()=>{
+ if(!isAdministrator){message('Acesso restrito','Somente o administrador pode importar do GitHub.');return}
+ const {data:record,error}=await db.from('sites').select('repository').eq('id',siteId).maybeSingle();
+ if(error||!record?.repository){message('Repositório não configurado','Vincule o repositório no painel administrativo.');return}
+ if(!confirm('Importar do GitHub substituirá a página no editor. Salve o rascunho antes. Continuar?'))return;
+ try{
+  $('saveState').textContent='Carregando página e estilos...';
+  const base='https://raw.githubusercontent.com/'+record.repository+'/main/';
+  const response=await fetch(base+'index.html',{cache:'no-store'});
+  if(!response.ok)throw new Error('Não foi possível encontrar o index.html do repositório público.');
+  const result=await window.AssistAdvanced.importHtml(await response.text(),base);
+  hideLive();editor.setComponents(result.html);editor.setStyle(result.css);
+  $('saveState').textContent='Importação concluída, não salva';
+  const x=result.summary;
+  message('Página importada para edição','Foram carregados '+x.linked+' arquivo(s) CSS e corrigidos '+x.relatives+' links relativos. '+x.scripts+' script(s) JavaScript foram removidos; '+x.failed+' CSS externo(s) não puderam ser lidos. Confira a página inteira, checkout e animações antes de salvar ou publicar.');
+ }catch(error){message('Falha na importação',error.message)}
 };
 $('history').onclick=async()=>{const {data,error}=await db.from('site_revisions').select('id,label,created_at').eq('site_id',siteId).order('created_at',{ascending:false}).limit(20);if(error){message('Histórico',error.message);return}const options=(data||[]).map(r=>'<option value="'+esc(r.id)+'">'+esc(r.label)+' • '+new Date(r.created_at).toLocaleString('pt-BR')+'</option>').join('');$('modal').innerHTML='<div class="overlay"><div class="dialog"><h2>Versões salvas</h2><p>Selecione uma versão do site.</p><select id="revSelect">'+options+'</select><div class="row"><button id="revClose">Fechar</button><button id="revOpen">Abrir versão</button></div></div></div>';$('revClose').onclick=()=>{$('modal').innerHTML=''};$('revOpen').onclick=()=>{const r=$('revSelect').value;if(r)location.href='editor-pro.html?site='+encodeURIComponent(siteId)+'&revision='+encodeURIComponent(r)}};
 let publishAccess=false;
