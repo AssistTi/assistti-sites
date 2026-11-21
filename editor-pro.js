@@ -3,7 +3,7 @@ const c=window.ASSISTTI_AUTH||{},$=id=>document.getElementById(id);
 if(!c.url||!c.anonKey||!window.supabase||!window.grapesjs){document.body.textContent='Falha ao carregar as ferramentas do editor.';return}
 const db=window.supabase.createClient(c.url,c.anonKey),params=new URLSearchParams(location.search),siteId=params.get('site');
 let editor,user,site,version=0,dirty=false,hasDraft=false,isAdministrator=false;
-let zoom=75;
+let zoom=100;
 const esc=s=>String(s??'').replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]));
 function message(title,detail){$('modal').innerHTML='<div class="overlay"><div class="dialog"><h2>'+esc(title)+'</h2><p>'+esc(detail)+'</p><div class="row"><button id="close">Fechar</button></div></div></div>';$('close').onclick=()=>{$('modal').innerHTML=''}}
 function init(){
@@ -82,7 +82,7 @@ function updateZoom(value){
   frame.style.height=(100/factor)+'%';
   frame.style.transform='scale('+factor+')';
  }
- try{sessionStorage.setItem('assistti-editor-zoom',String(zoom))}catch{}
+ try{sessionStorage.setItem('assistti-editor-zoom-v2',String(zoom))}catch{}
 }
 function showLive(){
  const url=publishedUrl();
@@ -133,11 +133,12 @@ function installKeyboardShortcuts(){
 function bind(){
 window.AssistElementorShell?.install?.(editor);
 window.AssistAdvanced?.install?.(editor);
+window.AssistWorkspace?.install?.(editor,{updateZoom,getZoom:()=>zoom});
 installKeyboardShortcuts();
 $('zoomOut').onclick=()=>updateZoom(zoom-10);
 $('zoomIn').onclick=()=>updateZoom(zoom+10);
 $('zoomReset').onclick=()=>updateZoom(100);
-try{const stored=Number(sessionStorage.getItem('assistti-editor-zoom'));zoom=stored>=45&&stored<=100?stored:75}catch{zoom=75}
+try{const stored=Number(sessionStorage.getItem('assistti-editor-zoom-v2'));zoom=stored>=45&&stored<=100?stored:100}catch{zoom=100}
 editor.on('load',()=>updateZoom(zoom));
 updateZoom(zoom);
 $('livePreview').onclick=showLive;
