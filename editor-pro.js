@@ -7,7 +7,20 @@ let zoom=75;
 const esc=s=>String(s??'').replace(/[&<>"']/g,v=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[v]));
 function message(title,detail){$('modal').innerHTML='<div class="overlay"><div class="dialog"><h2>'+esc(title)+'</h2><p>'+esc(detail)+'</p><div class="row"><button id="close">Fechar</button></div></div></div>';$('close').onclick=()=>{$('modal').innerHTML=''}}
 function init(){
-editor=grapesjs.init({container:'#editor',height:'100%',storageManager:false,fromElement:false,noticeOnUnload:false,deviceManager:{devices:[{name:'Computador',width:''},{name:'Tablet',width:'768px'},{name:'Celular',width:'390px'}]}});
+editor=grapesjs.init({
+ container:'#editor',height:'100%',width:'auto',storageManager:false,fromElement:false,noticeOnUnload:false,
+ panels:{defaults:[]},
+ blockManager:{appendTo:'#elementorWidgets'},
+ styleManager:{appendTo:'#elementorStyles',sectors:[
+  {name:'Layout',open:true,buildProps:['display','position','width','height','max-width','min-height','margin','padding','overflow','flex-direction','justify-content','align-items','gap']},
+  {name:'Tipografia',open:false,buildProps:['font-family','font-size','font-weight','color','text-align','line-height','letter-spacing']},
+  {name:'Fundo',open:false,buildProps:['background-color','background-image','background-size','background-position','opacity']},
+  {name:'Borda e efeitos',open:false,buildProps:['border','border-radius','box-shadow','transform','transition']}
+ ]},
+ traitManager:{appendTo:'#elementorTraits'},
+ layerManager:{appendTo:'#elementorLayers'},
+ deviceManager:{devices:[{name:'Computador',width:''},{name:'Tablet',width:'768px',widthMedia:'992px'},{name:'Celular',width:'390px',widthMedia:'480px'}]}
+});
 const blocks=[
 ['Título','<h2 style="font-size:40px">Seu novo título</h2>'],
 ['Texto','<p style="font-size:18px;line-height:1.7">Seu texto aqui</p>'],
@@ -118,6 +131,7 @@ function installKeyboardShortcuts(){
  attachCanvas();
 }
 function bind(){
+window.AssistElementorShell?.install?.(editor);
 window.AssistAdvanced?.install?.(editor);
 installKeyboardShortcuts();
 $('zoomOut').onclick=()=>updateZoom(zoom-10);
