@@ -1,0 +1,63 @@
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+:root{--ai-bg:#080e1c;--ai-surface:#121b30;--ai-border:#2c3c5a;--ai-purple:#9780ff;--ai-text:#f3f4ff}
+body{font-family:"DM Sans",system-ui,Arial;background:var(--ai-bg);color:var(--ai-text)}
+.top{height:58px;min-height:58px;gap:12px;padding:0 18px;background:linear-gradient(110deg,#10172a,#15172d 67%,#21193a);border-color:#29324f;box-shadow:0 6px 20px #060a1770;position:relative;z-index:20}
+.top .brand{font-size:17px;font-weight:800;letter-spacing:-.05em}.top .brand span{color:var(--ai-purple)}
+.top .breadcrumb{font-size:12px;color:#bbc6df;padding:8px 10px;border:1px solid #374361;border-radius:9px;white-space:nowrap}
+.top .breadcrumb:hover{background:#2a3450}.top .name{color:#e7eaf8;font-size:13px;font-weight:750}
+.top .actions{gap:7px}.top .actions button{font-size:12px;padding:9px 12px;white-space:nowrap}
+.top button.primary{background:linear-gradient(105deg,#7062f1,#a168ee);border:1px solid #8270f9;box-shadow:0 5px 18px #7654e540}
+.top #publish:not(:disabled){background:#243f3c;border-color:#438b7a;color:#b3ffe6}
+.top .save{font-size:11px;color:#a2e6ce;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.subbar{height:51px;min-height:51px;max-height:51px;background:#111a2d;border-color:#293c58;padding:7px 12px;gap:6px}
+.subbar button{background:#1d2a42;border:1px solid #364867;padding:8px 10px;border-radius:9px;color:#cdd7ee;transition:background .15s,border-color .15s}
+.subbar button:hover{background:#283a59;border-color:#7864de;color:white}
+.subbar #desktop,.subbar #tablet,.subbar #mobile{background:#181f36}
+.subbar #esShowWidgets,.subbar #esShowLayers{background:#353068;color:#d9d0ff;border-color:#6555a6}
+.subbar .zoomtools{border-color:#443e77;background:#1a2037}
+.subbar .zoomtools button{border:0}
+#editorSidebar{background:linear-gradient(180deg,#141c2e,#121b2b);border-right:1px solid #34425f;box-shadow:7px 0 24px #03081328}
+#editorSidebar .es-head{padding:16px 15px 9px}
+#editorSidebar .es-head span{font-size:15px;font-weight:800;letter-spacing:-.025em}
+#editorSidebar .es-tabs{background:#121b2e;gap:2px;border-color:#344360;padding:8px}
+#editorSidebar .es-tabs button{font-size:11px;border-radius:8px;padding:10px 4px}
+#editorSidebar .es-tabs button.on{border-bottom-color:#b493ff;background:#453a735c;color:#fff}
+#editorSidebar .es-content{scrollbar-color:#455c83 transparent;scrollbar-width:thin}
+#editorSidebar .es-search{background:#0c1526;border:1px solid #3b4d6a}
+#editorSidebar .gjs-block-category .gjs-title{background:#19263d!important;color:#d8e3fb;border-radius:9px}
+#editorSidebar #elementorWidgets .gjs-block{min-height:80px;border-radius:11px;background:#1e2c45;border:1px solid #3b4c69;transition:background .2s,border-color .2s}
+#editorSidebar #elementorWidgets .gjs-block:hover{background:#2d385c;border-color:#a079ff}
+#editorSidebar .es-panel{padding:9px}
+#editorSidebar .gjs-sm-sector{border-color:#35445e}
+#editorSidebar .gjs-sm-sector-title{background:#202d45;border-radius:8px;color:#dce8ff}
+#editorSidebar .gjs-sm-properties{background:#101c2e}
+#editorSidebar .gjs-field{background:#121f35;border:1px solid #3a4b68;border-radius:7px}
+#editorSidebar .gjs-sm-label{font-size:11px;color:#afc2e2}
+#editorCenter{background:radial-gradient(circle at 50% 0%,#31315d44,transparent 65%),#0e1628}
+#editorCenter .gjs-cv-canvas{background:radial-gradient(circle at 50% -15%,#36305f77,transparent 65%),#151e30!important}
+#editorCenter .gjs-frame{box-shadow:0 0 0 1px #46536b,0 12px 35px #0005}
+#esStructure{border:1px solid #655597;border-radius:15px;background:#18233b;box-shadow:0 18px 48px #0008}
+#workspaceToolbar{border-color:#544e7d;background:#18233cf2;border-radius:14px;box-shadow:0 11px 30px #0007}
+#workspaceToolbar button{border-radius:8px}
+#assistTools{background:#131e32!important;border-color:#66558b!important}
+#aiCommand{background:linear-gradient(110deg,#292950,#3c2e6b);border-color:#7564bd;color:#e8dfff;font-weight:750}
+#aiCommand:hover{background:#493978}
+#aiCommandBar{position:fixed;inset:0;z-index:99;background:#050915c7;display:none;justify-content:center;align-items:flex-start;padding:14vh 12px 20px;backdrop-filter:blur(9px)}
+#aiCommandBar.open{display:flex}
+.ai-command-modal{width:min(600px,100%);background:#151e33;border:1px solid #605491;border-radius:19px;box-shadow:0 24px 90px #000b;overflow:hidden}
+.ai-command-top{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid #354362}
+.ai-command-top span{font-size:20px;color:#b99cff}
+.ai-command-top input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#fff;font:15px "DM Sans",system-ui}
+.ai-command-top button{background:#263553;border:1px solid #42547b;padding:5px 8px;font-size:11px;border-radius:7px;color:#ccd8f1}
+.ai-command-list{padding:9px;display:grid;gap:5px;max-height:45vh;overflow:auto}
+.ai-command-item{text-align:left;background:transparent;color:#e5ebff;border:1px solid transparent;border-radius:10px;padding:12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ai-command-item:hover,.ai-command-item:focus-visible{background:#273657;border-color:#6555ad}
+.ai-command-item strong{font-size:13px;display:block}.ai-command-item small{color:#9fb1d1;font-size:11px;display:block;margin-top:2px}
+.ai-command-tag{color:#a991ff;font-size:11px;font-weight:800;white-space:nowrap}
+.ai-command-hint{padding:12px 18px;border-top:1px solid #354362;font-size:11px;color:#8da1c4}
+.ai-tool-label{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#a99cff;text-transform:uppercase}
+#aiWelcomeToast{position:absolute;top:15px;left:50%;transform:translateX(-50%);z-index:11;background:#28234be8;border:1px solid #7262ac;border-radius:11px;color:#f4ecff;font-size:11px;padding:9px 14px;box-shadow:0 9px 26px #0005;pointer-events:none;opacity:1;transition:opacity .5s}
+#aiWelcomeToast.hide{opacity:0}
+@media(max-width:800px){.top{height:auto;min-height:54px;padding:8px 10px}.top .brand{font-size:14px}.top .actions button{padding:8px}.subbar{height:47px;min-height:47px;max-height:47px}#aiWelcomeToast{display:none}}
+@media(prefers-reduced-motion:reduce){.subbar button,#editorSidebar #elementorWidgets .gjs-block,#aiWelcomeToast{transition:none}}
