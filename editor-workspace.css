@@ -1,0 +1,56 @@
+
+/* AssistTI Sites: canvas amplo e controles de edição, sem alterar os sites publicados */
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;min-width:0}
+.top{height:51px;min-height:51px;flex:0 0 auto;padding:0 12px;gap:9px}
+.top .brand{font-size:14px}.top .name{font-size:12px}
+.top .actions{gap:5px}.top button{padding:8px 10px}
+.subbar{flex:0 0 auto;min-height:46px;max-height:48px;gap:5px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding:5px 9px;scrollbar-width:thin}
+.subbar button{flex:0 0 auto;padding:7px 9px;white-space:nowrap}
+.subbar small,.subbar .spacer{display:none}
+#editorArea{flex:1;height:auto!important;min-height:0!important;overflow:hidden;display:flex;align-items:stretch}
+#editorCenter{position:relative;flex:1;min-width:0;width:0;height:100%;overflow:hidden;background:#121a2b}
+#editorCenter #editor{height:100%!important;min-height:0!important;min-width:0;width:100%!important}
+#editorCenter .gjs-editor-cont{height:100%!important;width:100%!important}
+#editorCenter .gjs-editor{height:100%!important;width:100%!important}
+#editorCenter .gjs-cv-canvas{height:100%!important;width:100%!important;left:0!important;top:0!important;background:#172033}
+#editorCenter .gjs-cv-canvas__frames{left:0;top:0;right:0;bottom:0}
+#editorCenter .gjs-frame{box-shadow:0 0 0 1px #2e3c55}
+#editorSidebar{width:268px;flex:0 0 268px;min-width:0}
+#editorSidebar .es-head{padding:9px 12px 5px}
+#editorSidebar .es-tabs{padding:2px 7px 5px}
+#editorSidebar .es-tabs button{padding:8px 2px}
+#editorSidebar .es-panel{padding:7px}
+#editorSidebar #elementorWidgets .gjs-block{min-height:68px;margin:3px;width:calc(50% - 6px)}
+#editorSidebar #elementorWidgets .gjs-title{padding:9px}
+#editorSidebar .es-search{margin:5px 7px 9px;width:calc(100% - 14px)}
+#esStructure{right:8px;top:8px;width:258px}
+#workspaceToggle,#workspaceFit,#workspaceFull{background:#253c60;border-color:#42628d}
+#workspaceToggle:hover,#workspaceFit:hover,#workspaceFull:hover{background:#35537a}
+#workspaceFull[aria-pressed=true]{background:#5266d4}
+#workspaceToolbar{position:absolute;left:12px;bottom:13px;z-index:9;display:flex;gap:5px;align-items:center;background:#152239ee;border:1px solid #425572;border-radius:12px;padding:6px;box-shadow:0 5px 20px #0006;backdrop-filter:blur(8px)}
+#workspaceToolbar button{padding:7px 10px;font-size:11px}
+#workspaceToolbar .ws-text{font-size:11px;color:#b9cbed;padding:0 6px;white-space:nowrap}
+#editorArea.ws-hide-left #editorSidebar{display:none!important}
+#editorArea.ws-fullscreen{position:fixed!important;inset:0!important;z-index:28;background:#121a2b}
+#editorArea.ws-fullscreen #editorSidebar{display:none!important}
+#editorArea.ws-fullscreen #workspaceToolbar{z-index:31}
+#editorArea.ws-fullscreen #editorCenter{width:100%}
+#esContext{padding:10px;background:#19283d;border:1px solid #344f72;border-radius:10px;margin:6px 0 12px}
+#esContext h3{font-size:12px;margin:0 0 8px;color:#ecf3ff}
+#esContext label{display:block;font:650 11px system-ui;color:#bdcce7;margin:10px 0 5px}
+#esContext input,#esContext textarea,#esContext select{width:100%;padding:9px;background:#101a2b;color:#fff;border:1px solid #435674;border-radius:8px;font:12px system-ui;box-sizing:border-box}
+#esContext textarea{min-height:86px;resize:vertical}
+#esContext button{padding:8px 10px;margin-top:9px;background:#5267df;border:0;color:white;border-radius:8px;font-size:12px}
+#esContext .es-note{font-size:11px;line-height:1.5;color:#a9bbd7;margin-top:7px}
+#workspaceToolbar button:focus-visible,.subbar button:focus-visible,#esContext button:focus-visible{outline:2px solid #bba0ff;outline-offset:2px}
+@media(max-width:900px){#editorSidebar{width:235px;flex-basis:235px}.top .name{max-width:160px}}
+@media(max-width:650px){
+ .top{padding:6px 9px;height:auto;min-height:48px}.top .actions{margin-left:auto}
+ .subbar{min-height:43px;max-height:45px}
+ #editorArea{min-height:0!important}
+ #editorSidebar{position:absolute;z-index:14;width:min(300px,88vw);height:100%}
+ #editorArea.ws-hide-left #editorSidebar{display:none!important}
+ #workspaceToolbar{left:5px;bottom:5px;max-width:calc(100% - 10px);overflow-x:auto}
+ #workspaceToolbar .ws-text{display:none}
+}
