@@ -42,11 +42,12 @@ async function save(){
 $('save').disabled=true;$('saveState').textContent='Salvando...';
 const payload={site_id:siteId,project:editor.getProjectData(),html:editor.getHtml(),css:editor.getCss(),version:version+1,updated_by:user.id,updated_at:new Date().toISOString()};
 const {error}=await db.from('site_documents').upsert(payload,{onConflict:'site_id'});
-if(error){$('save').disabled=false;message('Falha ao salvar',error.message);return}
+if(error){$('save').disabled=false;message('Falha ao salvar',error.message);return false}
 version++;dirty=false;$('saveState').textContent='Salvo online';
 const {error:revError}=await db.from('site_revisions').insert({site_id:siteId,project:payload.project,html:payload.html,css:payload.css,created_by:user.id,label:'Rascunho '+version});
 if(revError)message('Rascunho salvo','Não foi possível registrar o histórico: '+revError.message);
 $('save').disabled=false;
+return true;
 }
 function exportHTML(){const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(site.name)+'</title><style>'+editor.getCss()+'</style></head><body>'+editor.getHtml()+'</body></html>';const url=URL.createObjectURL(new Blob([html],{type:'text/html'})),a=document.createElement('a');a.href=url;a.download='index.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
 function bind(){
@@ -84,7 +85,41 @@ $('githubImport').onclick=async()=>{
  }catch(e){message('Falha na importação',e.message)}
 };
 $('history').onclick=async()=>{const {data,error}=await db.from('site_revisions').select('id,label,created_at').eq('site_id',siteId).order('created_at',{ascending:false}).limit(20);if(error){message('Histórico',error.message);return}const options=(data||[]).map(r=>'<option value="'+esc(r.id)+'">'+esc(r.label)+' • '+new Date(r.created_at).toLocaleString('pt-BR')+'</option>').join('');$('modal').innerHTML='<div class="overlay"><div class="dialog"><h2>Versões salvas</h2><p>Selecione uma versão do site.</p><select id="revSelect">'+options+'</select><div class="row"><button id="revClose">Fechar</button><button id="revOpen">Abrir versão</button></div></div></div>';$('revClose').onclick=()=>{$('modal').innerHTML=''};$('revOpen').onclick=()=>{const r=$('revSelect').value;if(r)location.href='editor-pro.html?site='+encodeURIComponent(siteId)+'&revision='+encodeURIComponent(r)}};
-$('publish').onclick=()=>message('Publicação em preparação','O salvamento já funciona no Supabase. A publicação direta no GitHub ainda precisa de um serviço seguro de publicação.');
+let publishAccess=false;
+async function publicationStatus(){
+ try{
+ const {data,error}=await db.functions.invoke('publish-site',{body:{action:'status',siteId}});
+ if(error){$('publish').disabled=true;$('publish').title='Falha ao consultar o serviço de publicação';return}
+ publishAccess=Boolean(data?.canPublish);
+ $('publish').disabled=!publishAccess||!data?.configured;
+ $('publish').title=!publishAccess?'Este usuário não tem permissão de publicação':!data?.configured?'Falta configurar o token do GitHub no Supabase':'Publicar a página salva no GitHub Pages';
+ $('publish').textContent=data?.configured?'Publicar':'Publicar (configurar)';
+ }catch(e){$('publish').disabled=true;$('publish').title='Integração indisponível'}
+}
+publicationStatus();
+$('publish').onclick=async()=>{
+ if(!publishAccess){message('Sem permissão','Seu usuário não tem permissão para publicar este site.');return}
+ if(!$('publish').disabled){
+ const approved=confirm('Publicar agora? A versão atual do site no GitHub será preservada em um backup. O conteúdo salvo no editor substituirá o index.html público. Se você importou uma página, confira as imagens, botões e funções que dependem de JavaScript antes de continuar.');
+ if(!approved)return;
+ $('publish').disabled=true;$('publish').textContent='Publicando...';
+ try{
+ if(dirty||!version){const saved=await save();if(!saved){await publicationStatus();return}}
+ const {data,error}=await db.functions.invoke('publish-site',{body:{action:'publish',siteId}});
+ if(error||!data?.ok){
+ let code=data?.error;
+ if(!code&&error?.context?.json){try{code=(await error.context.json()).error}catch{}}
+ const messages={GITHUB_SECRET_MISSING:'O token de publicação ainda não foi configurado no Supabase.',GITHUB_PUBLISH_FAILED:'Não foi possível atualizar o GitHub. Confira a permissão do token e a proteção da branch.',NO_SAVED_DRAFT:'Salve um rascunho antes de publicar.',PUBLISH_NOT_ALLOWED:'Seu usuário não tem permissão para publicar este site.',REPOSITORY_NOT_CONFIGURED:'Configure o repositório do site no painel de administração.',PAGE_TOO_LARGE:'O HTML ficou grande demais para publicar automaticamente.'};
+ message('Não foi possível publicar',messages[code]||'A publicação não foi concluída. Confira a integração e tente novamente.');
+ }else{
+ const backup=data.backupBranch||'';
+ message('Publicação enviada ao GitHub','O site foi atualizado no repositório. O GitHub Pages deve publicar após concluir o processamento. Backup: '+backup);
+ $('saveState').textContent='Commit: '+String(data.commit||'').slice(0,8);
+ }
+ }catch(e){message('Erro de publicação','Não foi possível contatar o serviço de publicação: '+e.message)}
+ await publicationStatus();
+ }
+};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 }
 async function boot(){
