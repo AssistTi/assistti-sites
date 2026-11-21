@@ -53,3 +53,32 @@ O arquivo `index.html` redireciona para o login.
 - Revisão periódica de permissões recomendada
 
 Obs.: O projeto Supabase ainda aponta um aviso opcional de proteção contra senhas vazadas desativada. Ative-a no painel Auth se estiver disponível no plano.
+
+
+## Publicação direta no GitHub
+
+A Edge Function `publish-site` está implantada no Supabase e conectada ao botão **Publicar** do editor.
+
+### Último passo: autorizar a função
+
+1. Abra https://github.com/settings/personal-access-tokens/new
+2. Escolha um token **Fine-grained**, proprietário `AssistTi`, acesso **Only select repositories** e selecione `treino-magnetico` (ou outros repositórios necessários).
+3. Em **Repository permissions**, libere **Contents: Read and write**. Escolha validade limitada.
+4. Abra https://supabase.com/dashboard/project/tlverdwpewfoxbojyxqf/functions/secrets
+5. Crie o segredo `GITHUB_PUBLISH_TOKEN` e cole o token **somente no campo de segredos do Supabase**.
+6. Abra **Painel > Publicações** para verificar o status e depois entre no editor do site.
+
+A função exige autenticação Supabase, consulta o papel e as permissões por site, lê apenas o rascunho guardado no banco e cria uma **branch de backup antes de qualquer substituição de index.html**. O GitHub Pages publica após a atualização no repositório.
+
+Nunca copie esse token para `auth-config.js`, arquivos HTML, código versionado ou conversas.
+
+**Limitação importante:** o editor visual importa HTML, mas remove JavaScript de páginas importadas. Publicar o rascunho importado pode substituir scripts, checkout, animações e outras funções do site original. Revise a página integralmente e confirme antes de publicar, especialmente em sites já ativos.
+
+### Segurança e verificação
+
+- A função responde `GITHUB_SECRET_MISSING` até a credencial ser adicionada.
+- Clientes sem permissão `can_publish` recebem recusa de publicação.
+- O painel não apresenta sucesso antes de o GitHub confirmar o commit.
+- O backup é criado antes de cada publicação.
+- O token deve ser restrito aos repositórios necessários e rotacionado antes de expirar.
+- A função foi implantada, mas não houve teste completo de publicação porque o segredo do GitHub ainda não está configurado.
