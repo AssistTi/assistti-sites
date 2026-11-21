@@ -35,7 +35,7 @@ window.AssistWorkspace={
    const device=editor.getDevice?.()||"Computador";
    const areaWidth=Math.max(280,center.clientWidth-24);
    const target=device==="Celular"?390:device==="Tablet"?768:areaWidth;
-   const percent=Math.max(45,Math.min(100,Math.floor(areaWidth/target*100)));
+   const percent=Math.max(45,Math.min(150,Math.floor(areaWidth/target*100)));
    opts.updateZoom?.(percent);
    relayout();
   }
