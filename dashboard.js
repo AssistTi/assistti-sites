@@ -50,7 +50,8 @@ function overview(){
  '<div class="aihero-art" aria-hidden="true"><div class="ai-orbit"></div><div class="ai-orbit"></div><div class="ai-orbit">✦</div></div></section>';
  html+='<section class="ai-shortcuts">'+
  '<button class="ai-shortcut" data-quick="sites"><span class="symbol">▧</span><span><strong>Meus sites</strong><small>Continue a edição das páginas</small></span></button>'+
- (isAdmin()?'<button class="ai-shortcut" data-quick="clientes"><span class="symbol">♙</span><span><strong>Clientes</strong><small>Contas e acessos individuais</small></span></button>':'<button class="ai-shortcut" data-quick="backups"><span class="symbol">◷</span><span><strong>Histórico</strong><small>Consulte suas versões salvas</small></span></button>')+
+ (isAdmin()?'<button class="ai-shortcut" data-quick="clientes"><span class="symbol">♙</span><span><strong>Clientes</strong><small>Contas e acessos individuais</small></span></button>':'<button class="ai-shortcut" data-quick="backups"><span class="symbol">◷</span><span><strong>Backups</strong><small>Consulte as versões salvas</small></span></button>')+
+ '<button class="ai-shortcut" data-quick="backups"><span class="symbol">◷</span><span><strong>Backups de páginas</strong><small>Clonar e restaurar versões</small></span></button>'+
  '<button class="ai-shortcut" data-quick="'+(isAdmin()?'publicacao':'conta')+'"><span class="symbol">'+(isAdmin()?'↑':'⚙')+'</span><span><strong>'+(isAdmin()?'Publicações':'Minha conta')+'</strong><small>'+(isAdmin()?'Confira o envio ao GitHub':'Gerencie seu acesso')+'</small></span></button></section>';
  html+='<div class="sectiontitle section"><div><h2>Resumo do seu espaço</h2><p class="ai-section-copy">Informações dos projetos conectados à sua conta</p></div></div>';
  html+='<div class="grid">'+
