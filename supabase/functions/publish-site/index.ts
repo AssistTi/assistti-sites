@@ -105,6 +105,23 @@ Deno.serve(async (req: Request) => {
     if (input.action === "status") {
       return respond(req, 200, { ok: true, configured: Boolean(GITHUB_TOKEN), canPublish: true });
     }
+    if (input.action === "diagnose") {
+      if (profiles[0]?.role !== "admin") return respond(req, 403, { error: "ADMIN_REQUIRED" });
+      if (!GITHUB_TOKEN) return respond(req, 200, { ok: false, error: "GITHUB_SECRET_MISSING" });
+      const repoParts = String(sites[0].repository).split("/");
+      const repoPath = "/repos/" + encodeURIComponent(repoParts[0]) + "/" + encodeURIComponent(repoParts[1]);
+      stage = "read_repository";
+      const detail = await github(repoPath);
+      stage = "read_branch";
+      const defaultBranch = String(detail.default_branch || "main");
+      await github(repoPath + "/git/ref/heads/" + encodeURIComponent(defaultBranch));
+      return respond(req, 200, {
+        ok: true, repository: sites[0].repository,
+        defaultBranch, canRead: true,
+        tokenCanPush: typeof detail.permissions?.push === "boolean" ? detail.permissions.push : null,
+        note: "Leitura verificada. Escrita e criação de backup não foram testadas."
+      });
+    }
     if (input.action !== "publish") return respond(req, 400, { error: "UNKNOWN_ACTION" });
     if (!GITHUB_TOKEN) return respond(req, 503, { error: "GITHUB_SECRET_MISSING" });
 
