@@ -137,9 +137,27 @@ async function publications(){
  const row=document.createElement('div');row.className='siteitem';
  const info=document.createElement('div');info.className='sitemeta';const strong=document.createElement('strong');strong.textContent=site.name;
  const small=document.createElement('small');small.textContent=site.repository||'Sem repositório cadastrado';
- info.append(strong,small);const label=document.createElement('span');label.className='muted';label.textContent='Verificando...';row.append(info,label);container.append(row);
+ info.append(strong,small);const label=document.createElement('span');label.className='muted';label.textContent='Verificando...';row.append(info,label);
+ const checkBtn=document.createElement('button');checkBtn.className='btn';checkBtn.textContent='Testar conexão';row.append(checkBtn);
+ const diagnosis=document.createElement('p');diagnosis.className='hint';diagnosis.style.width='100%';
+ row.append(diagnosis);container.append(row);
+ checkBtn.onclick=async()=>{
+  checkBtn.disabled=true;diagnosis.textContent='Verificando token e acesso ao GitHub, sem publicar nada...';
+  try{
+   const {data,error}=await sb.functions.invoke('publish-site',{body:{action:'diagnose',siteId:site.id}});
+   let details=data||{};
+   if(error?.context?.json){try{details=await error.context.json()}catch{}}
+   if(details.ok){
+    diagnosis.textContent='Conexão de leitura funcionando. Branch: '+details.defaultBranch+'. '+(details.tokenCanPush===true?'GitHub informa permissão de escrita.':details.tokenCanPush===false?'GitHub informa que o token não possui permissão de escrita.':'Permissão de escrita ainda não confirmada.')+' A criação do backup só será testada em uma publicação autorizada.';
+   }else{
+    const phases={read_repository:'acesso ao repositório',read_branch:'leitura da branch'};
+    diagnosis.textContent='Falha na '+(phases[details.stage]||'conexão')+'. Código GitHub: '+(details.githubStatus||'não informado')+'. Confira no token: proprietário AssistTi, repositório correto e Contents: Read and write.';
+   }
+  }catch(e){diagnosis.textContent='Não foi possível completar o diagnóstico. Verifique o serviço de publicação.'}
+  finally{checkBtn.disabled=false}
+ };
  try{const {data,error}=await sb.functions.invoke('publish-site',{body:{action:'status',siteId:site.id}});
- if(error)label.textContent='Não foi possível consultar';else label.textContent=data?.configured?'Pronto para publicar':'Falta token no Supabase';
+ if(error)label.textContent='Não foi possível consultar';else label.textContent=data?.configured?'Token encontrado, acesso ainda não verificado':'Falta token no Supabase';
  }catch{label.textContent='Serviço indisponível'}
  }
  if(!state.sites.length)container.textContent='Nenhum site cadastrado.';
