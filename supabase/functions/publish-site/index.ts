@@ -49,7 +49,13 @@ async function github(path: string, method = "GET", data?: object) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     const e = new Error("GitHub " + response.status);
-    (e as Error & { status?: number }).status = response.status;
+    const detail = e as Error & { status?: number; githubMessage?: string; acceptedPermissions?: string; requestId?: string };
+    detail.status = response.status;
+    // Não exponha headers de autorização nem o token.
+    detail.githubMessage = typeof body?.message === "string" ? body.message.slice(0, 450) : "";
+    detail.acceptedPermissions = (response.headers.get("x-accepted-github-permissions") || "").slice(0, 200);
+    detail.requestId = (response.headers.get("x-github-request-id") || "").slice(0, 80);
+    console.error("Github publish failure", JSON.stringify({ status: detail.status, message: detail.githubMessage, stagePath: path.split("?")[0], requestId: detail.requestId }));
     throw e;
   }
   return body;
@@ -224,7 +230,10 @@ Deno.serve(async (req: Request) => {
     if (ghStatus) {
       return respond(req, ghStatus === 401 || ghStatus === 403 ? 503 : 502, {
         error: "GITHUB_PUBLISH_FAILED", githubStatus: ghStatus, stage,
-        message: "Não foi possível atualizar o repositório. Confira token, permissões e proteção da branch.",
+        githubMessage: (error as Error & { githubMessage?: string }).githubMessage || null,
+        requiredPermissions: (error as Error & { acceptedPermissions?: string }).acceptedPermissions || null,
+        githubRequestId: (error as Error & { requestId?: string }).requestId || null,
+        message: "O GitHub recusou a operação. Confira a mensagem detalhada.",
       });
     }
     return respond(req, 500, { error: "INTERNAL_ERROR", stage, message: "Falha ao validar ou publicar a página." });
