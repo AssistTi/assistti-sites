@@ -148,6 +148,7 @@ async function publications(){
    let details=data||{};
    if(error?.context?.json){try{details=await error.context.json()}catch{}}
    if(details.ok){
+    label.textContent=details.tokenCanPush===true?'Leitura e escrita reconhecidas':details.tokenCanPush===false?'Sem permissão de escrita':'Leitura verificada';
     diagnosis.textContent='Conexão de leitura funcionando. Branch: '+details.defaultBranch+'. '+(details.tokenCanPush===true?'GitHub informa permissão de escrita.':details.tokenCanPush===false?'GitHub informa que o token não possui permissão de escrita.':'Permissão de escrita ainda não confirmada.')+' A criação do backup só será testada em uma publicação autorizada.';
    }else{
     const phases={read_repository:'acesso ao repositório',read_branch:'leitura da branch'};
