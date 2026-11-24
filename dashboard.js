@@ -23,19 +23,22 @@ async function load(){
  state.profiles=usersRes.data||[];
 }
 function nav(tab){if(!isAdmin()&&['clientes','permissoes','publicacao'].includes(tab))tab='inicio';
- if(!['inicio','sites','clientes','permissoes','publicacao','historico','conta'].includes(tab))tab='inicio';
+ if(tab==='historico')tab='backups';
+ if(!['inicio','sites','clientes','permissoes','publicacao','backups','conta'].includes(tab))tab='inicio';
  state.tab=tab;
- const titles={inicio:['Visão geral','Acompanhe seus sites em um só lugar.'],sites:['Meus sites','Edite e organize seus projetos.'],clientes:['Clientes e acessos','Contas cadastradas e sites vinculados.'],permissoes:['Permissões','Controle quem pode editar e salvar cada site.'],publicacao:['Publicação dos sites','Confira a conexão com o GitHub e os backups.'],historico:['Versões salvas','Recupere rascunhos anteriores.'],conta:['Minha conta','Informações e segurança do seu acesso.']};
+ const titles={inicio:['Visão geral','Acompanhe seus sites em um só lugar.'],sites:['Meus sites','Edite e organize seus projetos.'],clientes:['Clientes e acessos','Contas cadastradas e sites vinculados.'],permissoes:['Permissões','Controle quem pode editar e salvar cada site.'],publicacao:['Publicação dos sites','Confira a conexão com o GitHub e os backups.'],backups:['Backups de páginas','Salve cópias e recupere versões anteriores.'],conta:['Minha conta','Informações e segurança do seu acesso.']};
  $('pageTitle').textContent=titles[tab][0];$('pageSubtitle').textContent=titles[tab][1];
  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===tab));
  render();
 }
 function siteCard(s){
  const a=siteAccess(s),repo=s.repository||'';
- return '<div class="siteitem"><div class="sitethumb">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="sitemeta"><strong>'+esc(s.name)+'</strong><small>'+esc(repo||'Sem repositório vinculado')+'</small></div><span class="status">'+(a.can_edit?'Edição liberada':'Visualização')+'</span><div class="flex">'+(a.can_edit?'<a class="btn primary" href="editor-pro.html?site='+encodeURIComponent(s.id)+'">Abrir editor</a>':'')+(repo?'<a class="btn soft" target="_blank" rel="noopener" href="https://github.com/'+encodeURI(repo).replace(/[^\w%\-.]/g,'')+'">GitHub</a>':'')+(isAdmin()?'<button class="btn" data-rename="'+s.id+'">Configurar</button>':'')+'</div></div>'
+ return '<div class="siteitem"><div class="sitethumb">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="sitemeta"><strong>'+esc(s.name)+'</strong><small>'+esc(repo||'Sem repositório vinculado')+'</small></div><span class="status">'+(a.can_edit?'Edição liberada':'Visualização')+'</span><div class="flex">'+(a.can_edit?'<a class="btn primary" href="editor-pro.html?site='+encodeURIComponent(s.id)+'">Abrir editor</a>':'')+(repo?'<a class="btn soft" target="_blank" rel="noopener" href="https://github.com/'+encodeURI(repo).replace(/[^\w%\-.]/g,'')+'">GitHub</a>':'')+(a.can_edit?'<button class="btn" data-clone="'+s.id+'">Clonar página</button><button class="btn" data-backup="'+s.id+'">Criar backup</button>':'')+(isAdmin()?'<button class="btn" data-rename="'+s.id+'">Configurar</button>':'')+'</div></div>'
 }
 function listenSite(){
  document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>editSite(b.dataset.rename));
+ document.querySelectorAll('[data-clone]').forEach(b=>b.onclick=()=>cloneSite(b.dataset.clone));
+ document.querySelectorAll('[data-backup]').forEach(b=>b.onclick=()=>createBackup(b.dataset.backup));
 }
 function overview(){
  const own=state.sites.filter(s=>isAdmin()||siteAccess(s).can_edit);
@@ -47,7 +50,7 @@ function overview(){
  '<div class="aihero-art" aria-hidden="true"><div class="ai-orbit"></div><div class="ai-orbit"></div><div class="ai-orbit">✦</div></div></section>';
  html+='<section class="ai-shortcuts">'+
  '<button class="ai-shortcut" data-quick="sites"><span class="symbol">▧</span><span><strong>Meus sites</strong><small>Continue a edição das páginas</small></span></button>'+
- (isAdmin()?'<button class="ai-shortcut" data-quick="clientes"><span class="symbol">♙</span><span><strong>Clientes</strong><small>Contas e acessos individuais</small></span></button>':'<button class="ai-shortcut" data-quick="historico"><span class="symbol">◷</span><span><strong>Histórico</strong><small>Consulte suas versões salvas</small></span></button>')+
+ (isAdmin()?'<button class="ai-shortcut" data-quick="clientes"><span class="symbol">♙</span><span><strong>Clientes</strong><small>Contas e acessos individuais</small></span></button>':'<button class="ai-shortcut" data-quick="backups"><span class="symbol">◷</span><span><strong>Histórico</strong><small>Consulte suas versões salvas</small></span></button>')+
  '<button class="ai-shortcut" data-quick="'+(isAdmin()?'publicacao':'conta')+'"><span class="symbol">'+(isAdmin()?'↑':'⚙')+'</span><span><strong>'+(isAdmin()?'Publicações':'Minha conta')+'</strong><small>'+(isAdmin()?'Confira o envio ao GitHub':'Gerencie seu acesso')+'</small></span></button></section>';
  html+='<div class="sectiontitle section"><div><h2>Resumo do seu espaço</h2><p class="ai-section-copy">Informações dos projetos conectados à sua conta</p></div></div>';
  html+='<div class="grid">'+
@@ -122,6 +125,45 @@ function permissions(userId){
  if(error){alertMsg(error.message,'error');return}await load();permissions(user_id);alertMsg('Acesso revogado.');
  });
 }
+async function cloneSite(id){
+ const source=state.sites.find(x=>x.id===id);if(!source||!siteAccess(source).can_edit)return;
+ showModal('<h2>Clonar página</h2><p class="hint">Cria um novo projeto com uma cópia independente da página, sem modificar o original. O novo projeto não fica conectado ao GitHub e não é publicado automaticamente.</p><div class="formrow"><label>Nome da cópia</label><input id="cloneName" maxlength="120" value="'+esc(source.name+' - Cópia')+'"></div><button class="btn primary" id="cloneConfirm">Criar cópia</button>');
+ $('cloneConfirm').onclick=async()=>{
+  const name=$('cloneName').value.trim();if(name.length<2)return alertMsg('Informe o nome da cópia.','error');
+  $('cloneConfirm').disabled=true;$('cloneConfirm').textContent='Clonando...';
+  const {data,error}=await sb.rpc('clone_site_project',{p_source:id,p_name:name});
+  if(error){$('cloneConfirm').disabled=false;$('cloneConfirm').textContent='Criar cópia';alertMsg('Falha ao clonar: '+error.message,'error');return}
+  closeModal();await load();nav('sites');alertMsg('Cópia criada. O site original não foi alterado.');
+ };
+}
+async function createBackup(id){
+ const source=state.sites.find(x=>x.id===id);if(!source||!siteAccess(source).can_edit)return;
+ showModal('<h2>Backup da página</h2><p class="hint">Salva uma cópia do rascunho atual no Supabase. O site publicado permanece igual.</p><div class="formrow"><label>Nome do backup</label><input maxlength="140" id="backupName" value="'+esc('Backup manual - '+source.name)+'"></div><button class="btn primary" id="backupConfirm">Salvar backup</button>');
+ $('backupConfirm').onclick=async()=>{
+  const btn=$('backupConfirm');btn.disabled=true;btn.textContent='Salvando...';
+  const {error}=await sb.rpc('make_site_backup',{p_site:id,p_label:$('backupName').value.trim()});
+  if(error){btn.disabled=false;btn.textContent='Salvar backup';alertMsg('Falha ao salvar backup: '+error.message,'error');return}
+  closeModal();nav('backups');alertMsg('Backup criado com sucesso.');
+ };
+}
+async function restoreBackup(revisionId,siteId){
+ const site=state.sites.find(x=>x.id===siteId);if(!site||!siteAccess(site).can_edit)return;
+ if(!confirm('Restaurar esta versão do rascunho de '+site.name+'? A versão atual será guardada automaticamente como backup. O site público não será alterado até alguém clicar em Publicar.'))return;
+ const {error}=await sb.rpc('restore_site_backup',{p_revision:revisionId});
+ if(error){alertMsg('Não foi possível restaurar: '+error.message,'error');return}
+ alertMsg('Backup restaurado como rascunho. A página pública não mudou.');nav('backups');
+}
+async function backups(){
+ $('view').innerHTML='<div class="empty">Carregando backups de páginas...</div>';
+ const visible=state.sites.filter(s=>siteAccess(s).can_edit);
+ const {data,error}=await sb.from('site_revisions').select('id,site_id,label,created_at,created_by').order('created_at',{ascending:false}).limit(100);
+ if(error){$('view').innerHTML='<div class="notice error">'+esc(error.message)+'</div>';return}
+ const allowed=new Set(visible.map(s=>s.id));
+ const rows=(data||[]).filter(r=>allowed.has(r.site_id)).map(r=>'<tr><td>'+esc(state.sites.find(s=>s.id===r.site_id)?.name||'Site')+'</td><td>'+esc(r.label)+'</td><td>'+new Date(r.created_at).toLocaleString('pt-BR')+'</td><td><div class="flex"><a class="btn" href="editor-pro.html?site='+encodeURIComponent(r.site_id)+'&revision='+encodeURIComponent(r.id)+'">Abrir versão</a><button class="btn" data-restore="'+r.id+'" data-site="'+r.site_id+'">Restaurar rascunho</button></div></td></tr>').join('');
+ $('view').innerHTML='<div class="sectiontitle"><h2>Backups e versões</h2></div><div class="notice">Aqui você pode criar backups, recuperar versões e clonar páginas. Restaurar altera somente o rascunho salvo no Supabase. Para atualizar o site público, é necessário publicar separadamente.</div><div class="list" style="margin:20px 0">'+visible.map(s=>'<div class="siteitem"><div class="sitemeta"><strong>'+esc(s.name)+'</strong><small>'+esc(s.repository||'Cópia sem publicação vinculada')+'</small></div><div class="flex"><button class="btn" data-backup="'+s.id+'">Criar backup</button><button class="btn" data-clone="'+s.id+'">Clonar página</button></div></div>').join('')+'</div><div class="card tablewrap"><table><thead><tr><th>Site</th><th>Versão</th><th>Data</th><th>Ações</th></tr></thead><tbody>'+rows+'</tbody></table>'+(rows?'':'<p class="hint">Nenhum backup salvo ainda.</p>')+'</div>';
+ listenSite();
+ document.querySelectorAll('[data-restore]').forEach(btn=>btn.onclick=()=>restoreBackup(btn.dataset.restore,btn.dataset.site));
+}
 async function history(){
  $('view').innerHTML='<div class="empty">Carregando versões...</div>';
  const {data,error}=await sb.from('site_revisions').select('id,site_id,label,created_at,created_by').order('created_at',{ascending:false}).limit(60);
@@ -167,7 +209,7 @@ function account(){
  $('view').innerHTML='<div class="card" style="max-width:720px"><h2 style="margin-top:0">Minha conta</h2><p class="muted">E-mail: <strong>'+esc(state.user.email)+'</strong></p><p class="muted">Perfil: <strong>'+(isAdmin()?'Administrador':'Cliente')+'</strong></p><hr style="border:0;border-top:1px solid #37435b;margin:22px 0"><h3>Redefinir senha</h3><p class="hint">Enviaremos um e-mail com instruções para redefinir sua senha.</p><button class="btn" id="resetPass">Enviar e-mail de recuperação</button></div>';
  $('resetPass').onclick=async()=>{const {error}=await sb.auth.resetPasswordForEmail(state.user.email,{redirectTo:new URL('redefinir-senha.html',location.href).href});alertMsg(error?'Não foi possível enviar o e-mail.':'Verifique sua caixa de entrada.',error?'error':'ok')};
 }
-function render(){if(state.tab==='inicio')overview();if(state.tab==='sites')sites();if(state.tab==='clientes')clients();if(state.tab==='permissoes')permissions();if(state.tab==='publicacao')publications();if(state.tab==='historico')history();if(state.tab==='conta')account()}
+function render(){if(state.tab==='inicio')overview();if(state.tab==='sites')sites();if(state.tab==='clientes')clients();if(state.tab==='permissoes')permissions();if(state.tab==='publicacao')publications();if(state.tab==='backups')backups();if(state.tab==='conta')account()}
 async function boot(){
  const {data:{user},error}=await sb.auth.getUser();
  if(error||!user){location.replace('login.html');return}
