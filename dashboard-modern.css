@@ -59,3 +59,14 @@ input,select{background:#111c30;border-color:#384a68}input:focus,select:focus{bo
 @media(max-width:1080px){.app{grid-template-columns:220px minmax(0,1fr)}.aihero-art{display:none}.ai-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.app{display:block}.app>aside{position:static;height:auto;padding:10px 11px;gap:10px}.brand{border:0;padding:6px;font-size:18px}.nav{display:flex;gap:5px;overflow-x:auto}.nav button{flex:0 0 auto;width:auto;padding:9px 12px}.sidefoot{display:none}.top{padding:15px 17px}.content{padding:17px 13px 30px}.aihero{min-height:0;padding:25px 20px}.aihero h2{font-size:30px}.ai-shortcuts{grid-template-columns:1fr}.ai-footer-card{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.kpi{padding:17px}.kpi strong{font-size:27px}.siteitem{padding:13px}.status{white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){.btn,.siteitem,.ai-shortcut{transition:none}}
+
+/* Organização do diagnóstico GitHub: não comprimir nome e repositório */
+#publicationStatuses .siteitem{display:grid;grid-template-columns:minmax(250px,1fr) auto auto;gap:12px 18px;align-items:center}
+#publicationStatuses .sitemeta{min-width:0;max-width:100%}
+#publicationStatuses .sitemeta strong{display:block;line-height:1.35;overflow-wrap:normal;word-break:normal}
+#publicationStatuses .sitemeta small{display:block;font-size:12px;line-height:1.5;overflow-wrap:anywhere;word-break:normal}
+#publicationStatuses .status,#publicationStatuses .muted{white-space:normal}
+#publicationStatuses .siteitem>button{white-space:nowrap;justify-self:end}
+#publicationStatuses .siteitem>p.hint{grid-column:1/-1;display:block;min-width:0;margin:0;padding:12px 14px;border-radius:10px;background:#121e34;border:1px solid #2c4164;color:#b7cee9}
+@media(max-width:800px){#publicationStatuses .siteitem{grid-template-columns:minmax(0,1fr) auto;gap:10px}#publicationStatuses .siteitem>span{grid-column:1/-1;grid-row:2}#publicationStatuses .siteitem>button{grid-column:2;grid-row:1}}
+@media(max-width:450px){#publicationStatuses .siteitem{grid-template-columns:1fr}#publicationStatuses .siteitem>span,#publicationStatuses .siteitem>button{grid-column:1;grid-row:auto}#publicationStatuses .siteitem>button{justify-self:stretch}}
