@@ -227,8 +227,10 @@ $('publish').onclick=async()=>{
  }
  message('Não foi possível publicar',reason+' Etapa: '+(stages[stage]||stage)+'. Nenhuma confirmação de publicação foi recebida.');
  }else{
- const backup=data.backupBranch||'';
- message('Publicação enviada ao GitHub','O site foi atualizado no repositório. O GitHub Pages deve publicar após concluir o processamento. Backup: '+backup);
+ const backup=data.backupType==='branch'
+  ?'Branch de backup: '+(data.backupBranch||'não informada')
+  :'Versão anterior preservada no histórico GitHub: '+(data.previousCommit||'não informado');
+ message('Publicação enviada ao GitHub','O site foi atualizado no repositório. O GitHub Pages deve publicar após concluir o processamento. '+backup+'.');
  $('saveState').textContent='Commit: '+String(data.commit||'').slice(0,8);
  }
  }catch(e){message('Erro de publicação','Não foi possível contatar o serviço de publicação: '+e.message)}
