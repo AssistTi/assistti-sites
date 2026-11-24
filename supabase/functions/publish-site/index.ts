@@ -170,16 +170,38 @@ Deno.serve(async (req: Request) => {
     const oldIndex = currentResponse.ok ? await currentResponse.json() : null;
     const originalSha = oldIndex?.sha;
 
-    // O backup preserva o estado inteiro da branch antes de cada publicação.
+    // Verifica que a versão original pode ser consultada pelo SHA exato.
+    // Git preserva esta versão como ancestral do próximo commit, mesmo se
+    // a criação de novas branches for bloqueada pelas regras do repositório.
+    stage = "verify_previous_commit";
+    const previousCommit = await github(base + "/git/commits/" + encodeURIComponent(sha));
+    if (!previousCommit?.sha || previousCommit.sha !== sha || !previousCommit.tree?.sha) {
+      return respond(req, 502, { error: "BACKUP_VERIFICATION_FAILED", stage });
+    }
+
+    // Primeiro tenta uma branch de backup dedicada.
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const backupBranch = "backup/assistti-sites/" + stamp + "-" + crypto.randomUUID().slice(0, 8);
+    const desiredBackup = "backup/assistti-sites/" + stamp + "-" + crypto.randomUUID().slice(0, 8);
+    let backupBranch: string | null = null;
+    let backupType: "branch" | "commit_history" = "branch";
     stage = "create_backup";
-    await github(base + "/git/refs", "POST", {
-      ref: "refs/heads/" + backupBranch,
-      sha,
-    });
+    try {
+      await github(base + "/git/refs", "POST", {
+        ref: "refs/heads/" + desiredBackup,
+        sha,
+      });
+      backupBranch = desiredBackup;
+    } catch (backupError) {
+      const backupStatus = (backupError as Error & { status?: number }).status;
+      if (backupStatus !== 403 && backupStatus !== 422) throw backupError;
+      // Em repositórios que proíbem novas branches, o commit anterior
+      // permanece no histórico da branch e pode ser recuperado pelo SHA.
+      backupType = "commit_history";
+      console.warn("Branch de backup bloqueada; preservando commit anterior: " + sha.slice(0, 12));
+    }
+
     const patch: Record<string, unknown> = {
-      message: "Publicar via AssistTI Sites (" + active.id.slice(0, 8) + ")",
+      message: "Publicar via AssistTI Sites (" + active.id.slice(0, 8) + ") | versão anterior: " + sha,
       content: b64utf8(doc),
       branch,
     };
@@ -191,6 +213,8 @@ Deno.serve(async (req: Request) => {
       ok: true,
       commit: saved?.commit?.sha || null,
       backupBranch,
+      backupType,
+      previousCommit: sha,
       repository: sites[0].repository,
       url: "https://" + repo[0].toLowerCase() + ".github.io/" + repo[1] + "/",
       note: "GitHub Pages atualizará após o build.",
