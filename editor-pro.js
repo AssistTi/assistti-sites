@@ -212,10 +212,20 @@ $('publish').onclick=async()=>{
  if(dirty||!version){const saved=await save();if(!saved){await publicationStatus();return}}
  const {data,error}=await db.functions.invoke('publish-site',{body:{action:'publish',siteId}});
  if(error||!data?.ok){
- let code=data?.error;
- if(!code&&error?.context?.json){try{code=(await error.context.json()).error}catch{}}
- const messages={GITHUB_SECRET_MISSING:'O token de publicação ainda não foi configurado no Supabase.',GITHUB_PUBLISH_FAILED:'Não foi possível atualizar o GitHub. Confira a permissão do token e a proteção da branch.',NO_SAVED_DRAFT:'Salve um rascunho antes de publicar.',PUBLISH_NOT_ALLOWED:'Seu usuário não tem permissão para publicar este site.',REPOSITORY_NOT_CONFIGURED:'Configure o repositório do site no painel de administração.',PAGE_TOO_LARGE:'O HTML ficou grande demais para publicar automaticamente.'};
- message('Não foi possível publicar',messages[code]||'A publicação não foi concluída. Confira a integração e tente novamente.');
+ let details=data||{};
+ if(error?.context?.json){try{details=await error.context.json()}catch{}}
+ const code=details.error||data?.error;
+ const stage=details.stage||'não identificada',status=details.githubStatus;
+ const stages={read_repository:'consultar o repositório',read_branch:'consultar a branch',read_index:'ler a página atual',create_backup:'criar o backup',update_index:'atualizar o index.html'};
+ let reason='';
+ if(code==='GITHUB_PUBLISH_FAILED'){
+  reason='O GitHub recusou a operação ao tentar '+(stages[stage]||'publicar')+'. Código HTTP '+(status||'desconhecido')+'. ';
+  reason+=(status===401?'O token não foi aceito. Gere outro e salve em GITHUB_PUBLISH_TOKEN no Supabase.':status===403?'O token não tem acesso suficiente a esse repositório ou a operação foi bloqueada. Confira acesso ao repositório, Contents: Read and write e proteção de branches.':'Confira acesso do token, repositório e regras do GitHub.');
+ }else{
+  const messages={GITHUB_SECRET_MISSING:'O token de publicação ainda não foi configurado no Supabase.',NO_SAVED_DRAFT:'Salve um rascunho antes de publicar.',PUBLISH_NOT_ALLOWED:'Seu usuário não tem permissão de publicação.',REPOSITORY_NOT_CONFIGURED:'Configure o repositório do site no painel.',PAGE_TOO_LARGE:'O HTML ficou grande demais para publicação automática.',CANNOT_READ_SITE:'Não foi possível ler o index.html atual no GitHub.'};
+  reason=messages[code]||'A publicação não foi concluída. Confira a conexão e as permissões.';
+ }
+ message('Não foi possível publicar',reason+' Etapa: '+(stages[stage]||stage)+'. Nenhuma confirmação de publicação foi recebida.');
  }else{
  const backup=data.backupBranch||'';
  message('Publicação enviada ao GitHub','O site foi atualizado no repositório. O GitHub Pages deve publicar após concluir o processamento. Backup: '+backup);
