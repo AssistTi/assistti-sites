@@ -78,6 +78,7 @@ Deno.serve(async (req: Request) => {
   catch { return respond(req, 400, { error: "INVALID_JSON" }); }
   if (!/^[0-9a-f-]{36}$/i.test(input.siteId || "")) return respond(req, 400, { error: "INVALID_SITE" });
 
+  let stage = "authentication";
   try {
     const authResponse = await fetch(PROJECT_URL + "/auth/v1/user", {
       headers: { apikey: PUBLIC_KEY, Authorization: "Bearer " + token },
@@ -123,17 +124,20 @@ Deno.serve(async (req: Request) => {
 
     const repo = String(sites[0].repository).split("/");
     const base = "/repos/" + encodeURIComponent(repo[0]) + "/" + encodeURIComponent(repo[1]);
+    stage = "read_repository";
     const info = await github(base);
     const branch = String(info.default_branch || "main");
     if (!/^[\w./-]+$/.test(branch) || branch.includes("..")) {
       return respond(req, 502, { error: "INVALID_BRANCH" });
     }
 
+    stage = "read_branch";
     const head = await github(base + "/git/ref/heads/" + branch);
     const sha = head?.object?.sha;
     if (!sha) return respond(req, 502, { error: "BRANCH_NOT_FOUND" });
 
     const filename = "/contents/index.html";
+    stage = "read_index";
     const currentResponse = await fetch("https://api.github.com" + base + filename +
       "?ref=" + encodeURIComponent(branch), {
       headers: {
@@ -152,6 +156,7 @@ Deno.serve(async (req: Request) => {
     // O backup preserva o estado inteiro da branch antes de cada publicação.
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const backupBranch = "backup/assistti-sites/" + stamp + "-" + crypto.randomUUID().slice(0, 8);
+    stage = "create_backup";
     await github(base + "/git/refs", "POST", {
       ref: "refs/heads/" + backupBranch,
       sha,
@@ -163,6 +168,7 @@ Deno.serve(async (req: Request) => {
     };
     if (originalSha) patch.sha = originalSha;
 
+    stage = "update_index";
     const saved = await github(base + filename, "PUT", patch);
     return respond(req, 200, {
       ok: true,
@@ -176,10 +182,10 @@ Deno.serve(async (req: Request) => {
     const ghStatus = (error as Error & { status?: number }).status;
     if (ghStatus) {
       return respond(req, ghStatus === 401 || ghStatus === 403 ? 503 : 502, {
-        error: "GITHUB_PUBLISH_FAILED", githubStatus: ghStatus,
+        error: "GITHUB_PUBLISH_FAILED", githubStatus: ghStatus, stage,
         message: "Não foi possível atualizar o repositório. Confira token, permissões e proteção da branch.",
       });
     }
-    return respond(req, 500, { error: "INTERNAL_ERROR", message: "Falha ao validar ou publicar a página." });
+    return respond(req, 500, { error: "INTERNAL_ERROR", stage, message: "Falha ao validar ou publicar a página." });
   }
 });
