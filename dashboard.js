@@ -148,8 +148,8 @@ async function publications(){
    let details=data||{};
    if(error?.context?.json){try{details=await error.context.json()}catch{}}
    if(details.ok){
-    label.textContent=details.tokenCanPush===true?'Leitura e escrita reconhecidas':details.tokenCanPush===false?'Sem permissão de escrita':'Leitura verificada';
-    diagnosis.textContent='Conexão de leitura funcionando. Branch: '+details.defaultBranch+'. '+(details.tokenCanPush===true?'GitHub informa permissão de escrita.':details.tokenCanPush===false?'GitHub informa que o token não possui permissão de escrita.':'Permissão de escrita ainda não confirmada.')+' A criação do backup só será testada em uma publicação autorizada.';
+    label.textContent='Leitura funcionando, escrita não testada';
+    diagnosis.textContent='Token consegue ler o repositório. Branch: '+details.defaultBranch+'. Atenção: a permissão de escrita da conta não garante que o token possa gravar arquivos. A última publicação recebeu HTTP 403 (Resource not accessible by personal access token). Confira se este token específico tem Contents: Read and write no repositório.';
    }else{
     const phases={read_repository:'acesso ao repositório',read_branch:'leitura da branch'};
     diagnosis.textContent='Falha na '+(phases[details.stage]||'conexão')+'. Código GitHub: '+(details.githubStatus||'não informado')+'. Confira no token: proprietário AssistTi, repositório correto e Contents: Read and write.';
