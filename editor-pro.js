@@ -220,7 +220,10 @@ $('publish').onclick=async()=>{
  let reason='';
  if(code==='GITHUB_PUBLISH_FAILED'){
   reason='O GitHub recusou a operação ao tentar '+(stages[stage]||'publicar')+'. Código HTTP '+(status||'desconhecido')+'. ';
-  reason+=(status===401?'O token não foi aceito. Gere outro e salve em GITHUB_PUBLISH_TOKEN no Supabase.':status===403?'O token não tem acesso suficiente a esse repositório ou a operação foi bloqueada. Confira acesso ao repositório, Contents: Read and write e proteção de branches.':'Confira acesso do token, repositório e regras do GitHub.');
+  reason+=(status===401?'O token não foi aceito. Verifique o segredo GITHUB_PUBLISH_TOKEN no Supabase.':status===403?'O GitHub recusou a gravação. Confira o acesso do token a este repositório e a permissão Contents: Read and write.':'Confira acesso do token, repositório e regras do GitHub.');
+  if(details.githubMessage)reason+=' Mensagem do GitHub: '+String(details.githubMessage).slice(0,400)+'.';
+  if(details.requiredPermissions)reason+=' Permissões exigidas pela API: '+String(details.requiredPermissions).slice(0,120)+'.';
+  if(details.githubRequestId)reason+=' Referência GitHub: '+String(details.githubRequestId).slice(0,80)+'.';
  }else{
   const messages={GITHUB_SECRET_MISSING:'O token de publicação ainda não foi configurado no Supabase.',NO_SAVED_DRAFT:'Salve um rascunho antes de publicar.',PUBLISH_NOT_ALLOWED:'Seu usuário não tem permissão de publicação.',REPOSITORY_NOT_CONFIGURED:'Configure o repositório do site no painel.',PAGE_TOO_LARGE:'O HTML ficou grande demais para publicação automática.',CANNOT_READ_SITE:'Não foi possível ler o index.html atual no GitHub.'};
   reason=messages[code]||'A publicação não foi concluída. Confira a conexão e as permissões.';
